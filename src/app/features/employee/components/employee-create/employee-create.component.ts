@@ -3,22 +3,14 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { EmployeeService } from '../../services/employee.service';
-import { Employee } from '../../models/employee';
 
-/**
- * Komponenta za kreiranje novog zaposlenog.
- * Upravlja validacijom forme i slanjem podataka na backend.
- */
 @Component({
   selector: 'app-employee-create',
   templateUrl: './employee-create.component.html',
   styleUrls: ['./employee-create.component.css']
 })
 export class EmployeeCreateComponent implements OnInit, OnDestroy {
-  /** Grupa kontrola za formu zaposlenog */
   employeeForm!: FormGroup;
-
-  /** Subject koji služi za uništavanje svih pretplata pri uništenju komponente */
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -27,29 +19,17 @@ export class EmployeeCreateComponent implements OnInit, OnDestroy {
     private router: Router
   ) {}
 
-  /**
-   * Inicijalizacija komponente i forme.
-   * @returns void
-   */
   ngOnInit(): void {
     this.initForm();
   }
 
-  /**
-   * Čišćenje resursa i prekid RxJS pretplata.
-   * @returns void
-   */
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  /**
-   * Inicijalizuje reaktivnu formu sa validatorima.
-   * Polja su usklađena sa HTML-om.
-   * @returns void
-   */
   private initForm(): void {
+    // Ova imena (npr. fullName) MORAJU da se poklapaju sa formControlName u HTML-u
     this.employeeForm = this.fb.group({
       fullName: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
@@ -62,11 +42,6 @@ export class EmployeeCreateComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Obrađuje slanje forme.
-   * Mapira podatke i poziva servis.
-   * @returns void
-   */
   onSubmit(): void {
     if (this.employeeForm.invalid) {
       this.employeeForm.markAllAsTouched();
@@ -75,20 +50,26 @@ export class EmployeeCreateComponent implements OnInit, OnDestroy {
 
     const formValues = this.employeeForm.value;
 
-    // Mapiranje polja prema modelu koji backend očekuje (Pravilo 3.1)
-      const payload: any = {
-      ime: formValues.firstName,
-      prezime: formValues.lastName,
+    // Pošto u formi imaš "fullName", moramo ga razdvojiti na ime i prezime za backend
+    const nameParts = formValues.fullName.trim().split(' ');
+    const ime = nameParts[0] || '';
+    const prezime = nameParts.slice(1).join(' ') || 'Prezime'; // Backend obično ne dozvoljava prazno prezime
+
+    // Mapiranje polja prema tvom Employee modelu (srpski ključevi)
+    const payload: any = {
+      ime: ime,
+      prezime: prezime,
       email: formValues.email,
-      brojTelefona: formValues.phoneNumber,
-      datumRodjenja: formValues.birthDate,
-      pol: formValues.gender,
-      pozicija: formValues.position,
-      departman: formValues.department,
-      role: formValues.role,
-      aktivan: true,
-      username: formValues.email.split('@')[0], // Generišemo privremeni username
-      password: "Sifra123!" // Default šifra
+      brojTelefona: "+38100000000", // Dodajemo default jer ga nema u ovoj formi a backend traži
+      datumRodjenja: "1990-01-01", // Dodajemo default
+      pol: "M",                    // Dodajemo default
+      pozicija: formValues.role,
+      departman: "Default",
+      role: formValues.role === 'Admin' ? 'ADMIN' : 'BASIC',
+      aktivan: formValues.status === 'Active',
+      permisije: this.mapPermissions(formValues),
+      username: formValues.email.split('@')[0],
+      password: "Sifra123!"
     };
 
     this.employeeService.createEmployee(payload)
@@ -96,16 +77,13 @@ export class EmployeeCreateComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.router.navigate(['/employees']);
+        },
+        error: (err) => {
+          console.error('Greška pri kreiranju:', err);
         }
-        // Error handling se vrši u globalnom interceptoru (Pravilo 5.1)
       });
   }
 
-  /**
-   * Pomoćna metoda za mapiranje checkbox vrednosti u niz stringova.
-   * @param values Vrednosti iz forme
-   * @returns string[] Niz permisija
-   */
   private mapPermissions(values: any): string[] {
     const permissions: string[] = [];
     if (values.permCreate) permissions.push('CREATE');
