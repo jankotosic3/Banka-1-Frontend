@@ -18,12 +18,12 @@ export class EmployeeEditComponent implements OnChanges {
     this.editForm = this.fb.group({
       ime: ['', [Validators.required, Validators.minLength(2)]],
       prezime: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
+      brojTelefona: ['', Validators.required],
+      adresa: [''],
       pozicija: [''],
       departman: [''],
-      role: ['EmployeeBasic'],
-      aktivan: [true],
-      permisije: [[]]
+      role: ['BASIC'],
+      aktivan: [true]
     });
   }
 
@@ -32,12 +32,12 @@ export class EmployeeEditComponent implements OnChanges {
       this.editForm.patchValue({
         ime: this.employee.ime || '',
         prezime: this.employee.prezime || '',
-        email: this.employee.email || '',
+        brojTelefona: this.employee.brojTelefona || '',
+        adresa: this.employee.adresa || '',
         pozicija: this.employee.pozicija || '',
         departman: this.employee.departman || '',
-        role: this.employee.role || 'EmployeeBasic',
-        aktivan: this.employee.aktivan !== false,
-        permisije: this.employee.permisije ? [...this.employee.permisije] : []
+        role: this.employee.role || 'BASIC',
+        aktivan: this.employee.aktivan !== false
       });
     }
   }
@@ -49,8 +49,8 @@ export class EmployeeEditComponent implements OnChanges {
     }
 
     const updatedEmployee: Employee = {
-      ...this.employee,
-      ...this.editForm.value
+      ...this.editForm.value,
+      id: this.employee.id
     };
 
     this.save.emit(updatedEmployee);

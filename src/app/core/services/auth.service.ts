@@ -66,12 +66,13 @@ export class AuthService {
   /**
    * Sends forgot password request for the provided email.
    * @param email User email address
-   * @returns Observable without response body payload details
+   * @returns Observable with text response message
    */
-  public forgotPassword(email: string): Observable<unknown> {
-    return this.http.post<unknown>(`${environment.apiUrl}/auth/forgot-password`, {
-      email
-    });
+  public forgotPassword(email: string): Observable<string> {
+    return this.http.post<string>(`${environment.apiUrl}/auth/forgot-password`,
+      { email },
+      { responseType: 'text' as 'json' }
+    );
   }
 
   /**

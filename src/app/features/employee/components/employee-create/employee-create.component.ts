@@ -42,7 +42,7 @@ export class EmployeeCreateComponent implements OnInit, OnDestroy {
       adresa: [''],
       pozicija: ['', Validators.required],
       departman: ['', Validators.required],
-      role: ['EmployeeBasic', Validators.required]
+      role: ['BASIC', Validators.required]
     });
   }
 
@@ -59,9 +59,7 @@ export class EmployeeCreateComponent implements OnInit, OnDestroy {
 
     const payload: any = {
       ...formValues,
-      aktivan: false,
-      username: formValues.email.split('@')[0],
-      permisije: []
+      username: formValues.email.split('@')[0]
     };
 
     this.employeeService.createEmployee(payload)
