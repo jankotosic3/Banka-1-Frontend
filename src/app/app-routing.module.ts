@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { EmployeeListComponent } from './features/employee/components/employee-list/employee-list.component';
 import { EmployeeCreateComponent } from './features/employee/components/employee-create/employee-create.component';
+import { AccountListComponent } from './features/client/components/account-list/account-list.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { NotFoundComponent } from './shared/components/not-found/not-found.component';
@@ -13,7 +14,7 @@ const routes: Routes = [
     path: 'home',
     loadChildren: () =>
       import('./features/client/client.module').then((m) => m.ClientModule),
-    canActivate: [authGuard]
+    //canActivate: [authGuard]
   },
   {
     path: 'employees/new',
@@ -30,9 +31,8 @@ const routes: Routes = [
   // F2 — Lista računa klijenta
   {
     path: 'accounts',
-    canActivate: [authGuard],
-    loadChildren: () =>
-      import('./features/client/client.module').then(m => m.ClientModule)
+    component: AccountListComponent,
+    //canActivate: [authGuard],
   },
   {
     path: '403',

@@ -1,8 +1,14 @@
 <aside class="sidebar">
-  <div class="sidebar__brand">
-    <span class="sidebar__brand-icon">🏦</span>
-    <span class="sidebar__brand-name">Banka</span>
-  </div>
+  <a
+    [routerLink]="'/home'"
+    routerLinkActive="sidebar__link--active"
+    class="sidebar__link"
+  >
+    <div class="sidebar__brand">
+      <span class="sidebar__brand-icon">🏦</span>
+      <span class="sidebar__brand-name">Banka</span>
+    </div>
+  </a>
 
   <nav class="sidebar__nav">
     <a
