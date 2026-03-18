@@ -1,0 +1,50 @@
+<div class="client-detail-page">
+  <header class="hero">
+    <div class="hero__content">
+      <h1>Detalji klijenta: {{ clientForm.get('firstName')?.value }}</h1>
+      <a class="hero__action" (click)="onCancel()">Nazad na listu</a>
+    </div>
+  </header>
+
+  <main class="client-detail-content">
+    <div class="detail-card">
+      <div class="table-state--error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Ime</label>
+            <input type="text" formControlName="ime" class="input-field">
+          </div>
+          <div class="form-group">
+            <label>Prezime</label>
+            <input type="text" formControlName="prezime" class="input-field">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" formControlName="email" class="input-field">
+          </div>
+          <div class="form-group">
+            <label>Broj telefona</label>
+            <input type="text" formControlName="brojTelefona" class="input-field">
+          </div>
+          <div class="form-group">
+            <label>Adresa</label>
+            <input type="text" formControlName="adresa" class="input-field">
+          </div>
+          <div class="form-group">
+            <label>JMBG (Neditabilno)</label>
+            <input type="text" formControlName="jmbg" class="input-field">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="onCancel()">Otkaži</button>
+          <button type="submit" class="btn-save" [disabled]="clientForm.invalid">Sačuvaj izmene</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>

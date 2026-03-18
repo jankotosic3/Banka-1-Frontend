@@ -3,6 +3,9 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { EmployeeListComponent } from './features/employee/components/employee-list/employee-list.component';
 import { EmployeeCreateComponent } from './features/employee/components/employee-create/employee-create.component';
+import { AccountCreateComponent } from './features/client/components/account-create/account-create.component';
+import { ClientListComponent } from './features/client/components/client-list/client-list.component';
+import { ClientDetailComponent } from './features/client/components/client-detail/client-detail.component';
 import { AccountListComponent } from './features/client/components/account-list/account-list.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
@@ -14,7 +17,7 @@ const routes: Routes = [
     path: 'home',
     loadChildren: () =>
       import('./features/client/client.module').then((m) => m.ClientModule),
-    //canActivate: [authGuard]
+    canActivate: [authGuard]
   },
   {
     path: 'employees/new',
@@ -23,16 +26,37 @@ const routes: Routes = [
     data: { permission: 'EMPLOYEE_MANAGE_ALL' }
   },
   {
+    path: 'accounts/new',
+    component: AccountCreateComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'CLIENT_MANAGE' }
+  },
+  {
+    path: 'clients',
+    component: ClientListComponent,
+    canActivate: [authGuard, roleGuard], 
+    data: { permission: 'CLIENT_MANAGE' }
+  },
+  {
+    path: 'clients/:id',
+    component: ClientDetailComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'CLIENT_MANAGE' } 
+  },
+  {
+    path: 'users',
+    loadChildren: () => import('./features/user/user.module').then((m) => m.UserModule)
+  },
+  {
     path: 'employees',
     component: EmployeeListComponent,
     canActivate: [authGuard, roleGuard],
     data: { permission: 'EMPLOYEE_MANAGE_ALL' }
   },
-  // F2 — Lista računa klijenta
   {
     path: 'accounts',
     component: AccountListComponent,
-    //canActivate: [authGuard],
+    canActivate: [authGuard],
   },
   {
     path: '403',

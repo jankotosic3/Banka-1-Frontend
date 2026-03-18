@@ -1,0 +1,80 @@
+<!-- <div class="user-create">
+  <h2>Kreiranje korisnika</h2>
+
+  <form #userForm="ngForm" (ngSubmit)="submit(userForm)">
+    <div>
+      <label for="firstName">Ime</label>
+      <input id="firstName" [(ngModel)]="firstName" name="firstName" required />
+      <small class="error" *ngIf="userForm.submitted && !firstName">Ime je obavezno.</small>
+    </div>
+
+    <div>
+      <label for="lastName">Prezime</label>
+      <input id="lastName" [(ngModel)]="lastName" name="lastName" required />
+      <small class="error" *ngIf="userForm.submitted && !lastName">Prezime je obavezno.</small>
+    </div>
+
+    <div>
+      <label for="jmbg">JMBG</label>
+      <input id="jmbg" [(ngModel)]="jmbg" name="jmbg" />
+    </div>
+
+    <div class="actions">
+      <button type="submit" [disabled]="submitting">Kreiraj</button>
+    </div>
+  </form>
+</div> -->
+<div class="user-create-page">
+  <div class="user-create-card">
+    <div class="user-create-header">
+      <h2>Novi klijent</h2>
+      <p>Unesite osnovne podatke za kreiranje novog klijenta.</p>
+    </div>
+
+    <form #userForm="ngForm" (ngSubmit)="submit(userForm)" class="user-create-form">
+      <div class="form-group">
+        <label for="firstName">Ime</label>
+        <input
+          id="firstName"
+          [(ngModel)]="firstName"
+          name="firstName"
+          required
+          placeholder="Unesite ime"
+        />
+        <small class="error" *ngIf="userForm.submitted && !firstName">
+          Ime je obavezno.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="lastName">Prezime</label>
+        <input
+          id="lastName"
+          [(ngModel)]="lastName"
+          name="lastName"
+          required
+          placeholder="Unesite prezime"
+        />
+        <small class="error" *ngIf="userForm.submitted && !lastName">
+          Prezime je obavezno.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="jmbg">JMBG</label>
+        <input
+          id="jmbg"
+          [(ngModel)]="jmbg"
+          name="jmbg"
+          placeholder="Unesite JMBG"
+        />
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary" [disabled]="submitting">
+          {{ submitting ? 'Kreiranje...' : 'Kreiraj' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

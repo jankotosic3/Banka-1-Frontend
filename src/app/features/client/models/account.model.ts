@@ -72,3 +72,8 @@ export interface Account {
   company?: CompanyInfo;
   companyName?: string;
 }
+export interface ChangeLimitDto {
+  dailyLimit: number;
+  monthlyLimit: number;
+  verificationCode: string;
+}
