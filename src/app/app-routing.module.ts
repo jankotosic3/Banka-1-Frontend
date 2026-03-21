@@ -11,6 +11,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { NotFoundComponent } from './shared/components/not-found/not-found.component';
 import { ForbiddenComponent } from './shared/components/forbidden/forbidden.component';
+import { NewPaymentComponent } from './features/client/components/new-payment/new-payment.component';
 
 const routes: Routes = [
   {
@@ -52,6 +53,11 @@ const routes: Routes = [
     component: EmployeeListComponent,
     canActivate: [authGuard, roleGuard],
     data: { permission: 'EMPLOYEE_MANAGE_ALL' }
+  },
+  {
+    path: 'accounts/payment/new',
+    component: NewPaymentComponent,
+    canActivate: [authGuard]
   },
   {
     path: 'accounts',
