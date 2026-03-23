@@ -71,13 +71,13 @@ const routes: Routes = [
   {
   path: 'account-management',
   component: AccountManagementComponent,
-  canActivate: [authGuard, roleGuard],
+  //canActivate: [authGuard, roleGuard],
   data: { permission: 'CLIENT_MANAGE' }
 },
 {
   path: 'account-cards',
   component: AccountCardsPlaceholderComponent,
-  canActivate: [authGuard, roleGuard],
+  //canActivate: [authGuard, roleGuard],
   data: { permission: 'CLIENT_MANAGE' }
 },
   
