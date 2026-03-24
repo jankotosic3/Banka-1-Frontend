@@ -1,0 +1,153 @@
+<div class="layout">
+  <app-navbar></app-navbar>
+
+  <div class="main">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar__search">
+        <span class="material-icons">search</span>
+        <input type="text" placeholder="Transakcije, računi, kartice..." />
+      </div>
+
+      <div class="topbar__right">
+        <button class="topbar__icon-btn" title="Obaveštenja">
+          <span class="material-icons">notifications</span>
+        </button>
+        <button class="topbar__icon-btn" title="Pomoć">
+          <span class="material-icons">help_outline</span>
+        </button>
+        <span class="topbar__greeting">Dobro došli</span>
+        <button class="topbar__avatar" title="Profil">
+          <span class="material-icons">account_circle</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+      <h1 class="page-heading">PREGLED PLAĆANJA</h1>
+
+      <div class="card">
+        <!-- Tabovi -->
+        <div class="tabs">
+          <button
+            class="tab"
+            [class.tab--active]="activeTab === 'domestic'"
+            (click)="setActiveTab('domestic')"
+          >
+            Domaća plaćanja
+          </button>
+          <button
+            class="tab"
+            [class.tab--active]="activeTab === 'transfers'"
+            (click)="setActiveTab('transfers')"
+          >
+            Transferi
+          </button>
+        </div>
+
+        <!-- Header sekcije -->
+        <div class="section-header">
+          <h2 class="section-title">Pregled plaćanja</h2>
+          <div class="period-select">
+            <select [(ngModel)]="selectedPeriod" (change)="onPeriodChange()">
+              <option *ngFor="let opt of periodOptions" [value]="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="table-wrapper">
+          <!-- Loading state -->
+          <div class="table-state" *ngIf="isLoading">
+            <div class="spinner"></div>
+            <p>Učitavanje plaćanja...</p>
+          </div>
+
+          <!-- Error state -->
+          <div class="table-state table-state--error" *ngIf="!isLoading && errorMessage">
+            <p>{{ errorMessage }}</p>
+          </div>
+
+          <!-- Empty state -->
+          <div class="table-state" *ngIf="!isLoading && !errorMessage && payments.length === 0">
+            <p>Nema plaćanja za zadati period.</p>
+          </div>
+
+          <!-- Tabela sa podacima -->
+          <table *ngIf="!isLoading && !errorMessage && payments.length > 0">
+            <thead>
+              <tr>
+                <th class="sortable">
+                  DATUM
+                  <span class="sort-icon material-icons">unfold_more</span>
+                </th>
+                <th class="sortable">
+                  NAZIV PLATIOCA
+                  <span class="sort-icon material-icons">unfold_more</span>
+                </th>
+                <th class="sortable">
+                  VALUTA
+                  <span class="sort-icon material-icons">unfold_more</span>
+                </th>
+                <th class="sortable">
+                  IZNOS
+                  <span class="sort-icon material-icons">unfold_more</span>
+                </th>
+                <th class="sortable">
+                  STATUS
+                  <span class="sort-icon material-icons">unfold_more</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let payment of payments; trackBy: trackByPaymentId"
+                class="table-row"
+              >
+                <td class="cell-date">{{ formatDate(payment.date) }}</td>
+                <td class="cell-name">{{ payment.payerName }}</td>
+                <td class="cell-currency">{{ payment.currency }}</td>
+                <td class="cell-amount">{{ formatAmount(payment.amount) }}</td>
+                <td class="cell-status">
+                  <span
+                    class="status-badge"
+                    [ngClass]="getStatusClass(payment.status)"
+                  >
+                    {{ getStatusLabel(payment.status) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer sa paginacijom -->
+        <div class="table-footer" *ngIf="!isLoading && !errorMessage && totalElements > 0">
+          <span class="table-footer__summary">
+            Prikazuje se {{ currentPage * pageSize + 1 }} do {{ getLastItem() }} od {{ totalElements }} stavke
+          </span>
+
+          <div class="table-footer__pagination">
+            <button
+              class="pagination-btn"
+              [disabled]="currentPage === 0"
+              (click)="goToPage(currentPage - 1)"
+            >
+              <span class="material-icons">chevron_left</span>
+            </button>
+            <span class="pagination-current">{{ currentPage + 1 }}</span>
+            <button
+              class="pagination-btn"
+              [disabled]="currentPage >= totalPages - 1"
+              (click)="goToPage(currentPage + 1)"
+            >
+              <span class="material-icons">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -17,6 +17,7 @@ import { NewPaymentComponent } from './features/client/components/new-payment/ne
 import { AccountManagementComponent } from './features/employee/account-management/account-management.component';
 import { AccountCardsPlaceholderComponent } from './features/employee/account-cards-placeholder/account-cards-placeholder.component';
 import { PaymentRecipientsComponent } from './features/client/components/payment-recipients/payment-recipients.component';
+import { PaymentHistoryComponent } from './features/client/components/payment-history/payment-history.component';
 
 const routes: Routes = [
   {
@@ -106,6 +107,11 @@ const routes: Routes = [
   {
     path: 'payments/recipients',
     component: PaymentRecipientsComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'payments',
+    component: PaymentHistoryComponent,
     canActivate: [authGuard]
   },
   {
