@@ -16,12 +16,24 @@ export class AccountService {
     const page = 0;
     const size = 10;
     const params = new HttpParams()
+    .set('page', page.toString())
+    .set('size', size.toString());
+    
+    return this.http
+    .get<{ content: Account[] }>(this.baseUrl, { params })
+    .pipe(map(res => res.content));
+  }
+  /**
+   * Employee endpoint for all accounts in the system.
+   */
+  getAllAccounts(): Observable<Account[]> {
+    const page = 0;
+    const size = 10;
+    const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
 
-    return this.http
-      .get<{ content: Account[] }>(this.baseUrl, { params })
-      .pipe(map(res => res.content));
+    return this.http.get<Account[]>(`${environment.apiUrl}/accounts/employee/accounts`, { params }).pipe(map(res => res));
   }
 
   getAccountById(id: number): Observable<Account> {
@@ -48,16 +60,14 @@ export class AccountService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/limit`, { accountLimit: dailyLimit });
   }
 
-  createAccount(payload: any): Observable<any> {
+  createFxAccount(payload: any): Observable<any> {
     return this.http.post(`${environment.apiUrl}/employee/accounts/fx`, payload);
   }
 
-  /**
-   * Employee endpoint for all accounts in the system.
-   */
-  getAllAccounts(): Observable<Account[]> {
-    return this.http.get<Account[]>(`${environment.apiUrl}/accounts`);
+  createCheckingAccount(payload: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/employee/accounts/checking`, payload);
   }
+
 
   /**
    * Activate/deactivate account by account ID.
