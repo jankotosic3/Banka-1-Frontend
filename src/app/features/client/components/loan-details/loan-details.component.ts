@@ -28,34 +28,33 @@ export class LoanDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const loanId = this.route.snapshot.paramMap.get('id');
-    if (loanId) {
-      this.loadLoanDetails(+loanId);
-    } else {
-      this.hasError = true;
-      this.errorMessage = 'ID kredita nije prosleđen.';
+  const loanId = this.route.snapshot.paramMap.get('id');
+  if (loanId) {
+    // UKLONI znak '+' ispred loanId
+    this.loadLoanDetails(loanId); 
+  } else {
+    this.hasError = true;
+    this.errorMessage = 'ID kredita nije prosleđen.';
+    this.isLoading = false;
+  }
+}
+
+  loadLoanDetails(loanId: string | number): void {
+  this.isLoading = true;
+  this.loanService.getLoanById(loanId).subscribe({
+    next: (loan) => {
+      this.loan = loan;
+      this.loadInstallments(loanId);
+    },
+    error: (err) => {
       this.isLoading = false;
+      this.hasError = true;
+      this.errorMessage = 'Kredit nije pronađen.';
     }
-  }
+  });
+}
 
-  private loadLoanDetails(loanId: number): void {
-    this.isLoading = true;
-    this.hasError = false;
-
-    this.loanService.getLoanById(loanId).subscribe({
-      next: (loan) => {
-        this.loan = loan;
-        this.loadInstallments(loanId);
-      },
-      error: (err) => {
-        this.isLoading = false;
-        this.hasError = true;
-        this.errorMessage = err.error?.message || 'Greška pri učitavanju kredita.';
-      }
-    });
-  }
-
-  private loadInstallments(loanId: number): void {
+  private loadInstallments(loanId: string | number): void {
     this.loanService.getLoanInstallments(loanId).subscribe({
       next: (installments) => {
         this.installments = installments;
@@ -73,37 +72,55 @@ export class LoanDetailsComponent implements OnInit {
     this.location.back();
   }
 
-  getLoanTypeLabel(type: string): string {
+  getLoanTypeLabel(type: string | undefined): string {
+    if (!type) return 'Nepoznato';
     return LoanTypeLabels[type as keyof typeof LoanTypeLabels] || type;
   }
 
-  getInstallmentStatusLabel(status: InstallmentStatus): string {
-    return InstallmentStatusLabels[status] || status;
+  formatDate(dateString: string | null | undefined): string {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}.`;
+    } catch {
+      return dateString;
+    }
   }
 
-  getStatusBadgeClass(status: InstallmentStatus): string {
+  formatCurrency(amount: number | undefined, currency: string | undefined = 'RSD'): string {
+    if (amount === undefined || amount === null) return `0.00 ${currency}`;
+    return new Intl.NumberFormat('sr-RS', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  }
+
+  formatPercent(value: number | undefined): string {
+    if (value === undefined || value === null) return '0%';
+    return `${value}%`;
+  }
+  getInstallmentStatusLabel(status: string | undefined): string {
+    if (!status) return 'Nepoznato';
+  
+    switch (status) {
+      case 'PAID': return 'Plaćeno';
+      case 'UNPAID': return 'Neplaćeno';
+      case 'LATE': return 'Kasni';
+      default: return status;
+    }
+  }
+
+  getStatusBadgeClass(status: string | undefined): string {
     switch (status) {
       case 'PAID': return 'bg-green-100 text-green-700';
       case 'UNPAID': return 'bg-orange-100 text-orange-700';
       case 'LATE': return 'bg-red-100 text-red-700';
       default: return 'bg-gray-100 text-gray-700';
     }
-  }
-
-  formatDate(dateString: string | null): string {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('sr-RS');
-  }
-
-  formatCurrency(amount: number, currency: string): string {
-    return new Intl.NumberFormat('sr-RS', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount) + ' ' + currency;
-  }
-
-  formatPercent(value: number): string {
-    return value.toFixed(2) + '%';
   }
 }

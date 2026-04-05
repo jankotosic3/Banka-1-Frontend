@@ -1,7 +1,5 @@
-// Loan status type definition
 export type LoanStatus = 'APPROVED' | 'OVERDUE' | 'REPAID' | 'REJECTED';
 
-// Loan type enum
 export enum LoanType {
   MORTGAGE = 'MORTGAGE',
   PERSONAL = 'PERSONAL',
@@ -10,17 +8,57 @@ export enum LoanType {
   BUSINESS = 'BUSINESS'
 }
 
-// Main Loan model
-export interface Loan {
-  id: string;
-  type: LoanType;
-  number: string;
+export type InstallmentStatus = 'PAID' | 'UNPAID' | 'LATE';
+
+export const InstallmentStatusLabels: Record<InstallmentStatus, string> = {
+  'PAID': 'Plaćeno',
+  'UNPAID': 'Neplaćeno',
+  'LATE': 'Kasni'
+};
+
+export const LoanTypeLabels: Record<string, string> = {
+  'PERSONAL': 'Keš kredit',
+  'MORTGAGE': 'Stambeni kredit',
+  'AUTO': 'Auto kredit',
+  'STUDENT': 'Studentski kredit',
+  'BUSINESS': 'Poslovni kredit'
+};
+
+export interface Installment {
+  id?: number | string;
+  expectedDueDate: string;
+  actualPaymentDate?: string | null;
   amount: number;
-  currency: string; // e.g., 'RSD', 'USD', 'EUR'
-  status: LoanStatus;
-  createdDate: string; // ISO 8601 format
-  maturityDate: string; // ISO 8601 format
-  remainingBalance?: number; // Outstanding balance
-  interestRate?: number; // Annual interest rate
-  monthlyPayment?: number; // Monthly payment amount
+  currency: string;
+  interestRateAtPayment: number;
+  status: InstallmentStatus;
+}
+
+export interface Loan {
+  id: string | number;
+  currency: string;
+  status: LoanStatus | string;
+
+  // --- Polja koja koristi loan-list.component ---
+  type?: LoanType | string;
+  number?: string;
+  amount?: number;
+  createdDate?: string;
+  maturityDate?: string;
+  remainingBalance?: number;
+  interestRate?: number;
+  monthlyPayment?: number;
+
+  // --- Polja koja koristi loan-details.component ---
+  loanType?: string;
+  loanNumber?: string;
+  totalAmount?: number;
+  repaymentPeriod?: number;
+  nominalInterestRate?: number;
+  effectiveInterestRate?: number;
+  contractDate?: string;
+  dueDate?: string;
+  nextInstallmentAmount?: number;
+  nextInstallmentDate?: string;
+  remainingDebt?: number;
 }

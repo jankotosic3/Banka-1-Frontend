@@ -3,13 +3,15 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Loan, LoanStatus } from '../../models/loan.model';
 import { LoanService } from '../../services/loan.service';
+import { NavbarComponent } from 'src/app/shared/components/navbar/navbar.component';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-loan-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NavbarComponent],
   templateUrl: './loan-list.component.html',
   styleUrls: ['./loan-list.component.scss']
 })
@@ -22,7 +24,8 @@ export class LoanListComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly loanService: LoanService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -57,66 +60,42 @@ export class LoanListComponent implements OnInit, OnDestroy {
       });
   }
 
-  /**
-   * Get status badge styling based on loan status
-   */
-  getStatusBadgeClass(status: LoanStatus): string {
-    switch (status) {
-      case 'APPROVED':
-        return 'badge-approved';
-      case 'OVERDUE':
-        return 'badge-overdue';
-      case 'REPAID':
-        return 'badge-repaid';
-      case 'REJECTED':
-        return 'badge-rejected';
-      default:
-        return '';
-    }
-  }
-
-  /**
-   * Get status label in Serbian
-   */
-  getStatusLabel(status: LoanStatus): string {
-    switch (status) {
-      case 'APPROVED':
-        return 'Odobren';
-      case 'OVERDUE':
-        return 'U kašnjenju';
-      case 'REPAID':
-        return 'Otplaćen';
-      case 'REJECTED':
-        return 'Odbijen';
-      default:
-        return status;
-    }
-  }
-
-  /**
-   * Get loan type label in Serbian
-   */
-  getLoanTypeLabel(type: string): string {
+  getLoanTypeLabel(type: string | undefined): string {
+    if (!type) return 'Nepoznati tip';
     switch (type) {
-      case 'MORTGAGE':
-        return 'Hipotekarka kredita';
-      case 'PERSONAL':
-        return 'Lična kredita';
-      case 'AUTO':
-        return 'Auto kredita';
-      case 'STUDENT':
-        return 'Studentska kredita';
-      case 'BUSINESS':
-        return 'Poslovni kredita';
-      default:
-        return type;
+      case 'MORTGAGE': return 'Hipotekarni kredit';
+      case 'PERSONAL': return 'Keš kredit';
+      case 'AUTO': return 'Auto kredit';
+      case 'STUDENT': return 'Studentski kredit';
+      case 'BUSINESS': return 'Poslovni kredit';
+      default: return type;
     }
   }
 
-  /**
-   * Format currency amount with thousands separator
-   */
-  formatCurrency(amount: number, currency: string): string {
+  getStatusLabel(status: string | undefined): string {
+    if (!status) return 'Nepoznato';
+    switch (status) {
+      case 'APPROVED': return 'Odobren';
+      case 'OVERDUE': return 'Kasni';
+      case 'REPAID': return 'Otplaćen';
+      case 'REJECTED': return 'Odbijen';
+      default: return status;
+    }
+  }
+
+  getStatusBadgeClass(status: string | undefined): string {
+    if (!status) return 'badge-default';
+    switch (status) {
+      case 'APPROVED': return 'badge-approved';
+      case 'OVERDUE': return 'badge-overdue';
+      case 'REPAID': return 'badge-repaid';
+      case 'REJECTED': return 'badge-rejected';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  formatCurrency(amount: number | undefined, currency: string | undefined = 'RSD'): string {
+    if (amount === undefined || amount === null) return `0.00 ${currency}`;
     return new Intl.NumberFormat('sr-RS', {
       style: 'currency',
       currency: currency,
@@ -125,26 +104,32 @@ export class LoanListComponent implements OnInit, OnDestroy {
     }).format(amount);
   }
 
-  /**
-   * Format date to DD.MM.YYYY
-   */
-  formatDate(dateString: string): string {
+  formatDate(dateString: string | undefined): string {
+    if (!dateString) return '-';
     try {
       const date = new Date(dateString);
       const day = String(date.getDate()).padStart(2, '0');
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = date.getFullYear();
-      return `${day}.${month}.${year}`;
+      return `${day}.${month}.${year}.`;
     } catch {
       return dateString;
     }
   }
 
-  /**
-   * Navigate to loan details
-   */
-  viewLoanDetails(loanId: string): void {
-    this.router.navigate(['/client/loans', loanId]);
+  viewLoanDetails(loanId: string | number | undefined): void {
+    if (loanId !== undefined) {
+      // Stavili smo tačnu apsolutnu putanju sa kosom crtom na početku
+      this.router.navigate(['/home/loans', loanId]); 
+    }
+  }
+
+  // Dodali smo ovu novu funkciju da sprečimo grešku u HTML-u oko izračunavanja procenta za progress bar
+  calculateProgress(remaining: number | undefined, total: number | undefined): number {
+    const rem = remaining || 0;
+    const tot = total || 1; // Ako je total nedefinisan, stavljamo 1 da izbegnemo deljenje sa nulom
+    if (tot === 0) return 0;
+    return (rem / tot) * 100;
   }
 
   /**
