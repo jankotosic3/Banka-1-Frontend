@@ -1,0 +1,233 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { NavbarComponent } from '../../../../shared/components/navbar/navbar.component';
+import { AuthService } from '../../../../core/services/auth.service';
+import { SecuritiesService } from '../../services/securities.service';
+import {
+  Security,
+  Stock,
+  Future,
+  Forex,
+  SecuritiesFilters,
+  SecuritiesPage,
+  SortConfig,
+  SortField,
+} from '../../models/security.model';
+
+type SecurityTab = 'stocks' | 'futures' | 'forex';
+
+@Component({
+  selector: 'app-securities-list',
+  standalone: true,
+  imports: [CommonModule, FormsModule, NavbarComponent],
+  templateUrl: './securities-list.component.html',
+  styleUrls: ['./securities-list.component.scss'],
+})
+export class SecuritiesListComponent implements OnInit, OnDestroy {
+  private readonly destroy$ = new Subject<void>();
+
+  activeTab: SecurityTab = 'stocks';
+  isClient = false;
+
+  securities: Security[] = [];
+  isLoading = false;
+  errorMessage = '';
+
+  currentPage = 0;
+  pageSize = 10;
+  totalElements = 0;
+  totalPages = 0;
+
+  filters: SecuritiesFilters = {};
+  draftFilters: SecuritiesFilters = {};
+  isFilterOpen = false;
+
+  sortConfig: SortConfig = { field: 'ticker', direction: 'asc' };
+
+  searchQuery = '';
+
+  constructor(
+    private readonly securitiesService: SecuritiesService,
+    private readonly authService: AuthService,
+    private readonly router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.isClient = this.authService.isClient();
+    this.loadSecurities();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  setActiveTab(tab: SecurityTab): void {
+    if (tab === 'forex' && this.isClient) return;
+    this.activeTab = tab;
+    this.currentPage = 0;
+    this.clearFilters();
+    this.loadSecurities();
+  }
+
+  onSearchChange(): void {
+    this.filters.search = this.searchQuery;
+    this.currentPage = 0;
+    this.loadSecurities();
+  }
+
+  loadSecurities(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    let request$: Observable<SecuritiesPage<Security>>;
+    switch (this.activeTab) {
+      case 'stocks':
+        request$ = this.securitiesService.getStocks(
+          this.filters,
+          this.currentPage,
+          this.pageSize,
+          this.sortConfig
+        );
+        break;
+      case 'futures':
+        request$ = this.securitiesService.getFutures(
+          this.filters,
+          this.currentPage,
+          this.pageSize,
+          this.sortConfig
+        );
+        break;
+      case 'forex':
+        request$ = this.securitiesService.getForex(
+          this.filters,
+          this.currentPage,
+          this.pageSize,
+          this.sortConfig
+        );
+        break;
+    }
+
+    request$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (page: SecuritiesPage<Security>) => {
+        this.securities = page.content;
+        this.totalElements = page.totalElements;
+        this.totalPages = page.totalPages;
+        this.isLoading = false;
+      },
+      error: (err: Error) => {
+        console.error('Error loading securities:', err);
+        this.errorMessage = 'Greška pri učitavanju hartija od vrednosti.';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  toggleFilterPanel(): void {
+    this.isFilterOpen = !this.isFilterOpen;
+    if (this.isFilterOpen) {
+      this.syncDraftFilters();
+    }
+  }
+
+  closeFilterPanel(): void {
+    this.isFilterOpen = false;
+  }
+
+  applyFilters(): void {
+    this.filters = { ...this.draftFilters, search: this.searchQuery };
+    this.currentPage = 0;
+    this.loadSecurities();
+    this.closeFilterPanel();
+  }
+
+  clearFilters(): void {
+    this.filters = { search: this.searchQuery };
+    this.draftFilters = {};
+    this.currentPage = 0;
+    this.loadSecurities();
+    this.closeFilterPanel();
+  }
+
+  toggleSort(field: SortField): void {
+    if (this.sortConfig.field === field) {
+      this.sortConfig.direction =
+        this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortConfig = { field, direction: 'asc' };
+    }
+    this.loadSecurities();
+  }
+
+  getSortIcon(field: SortField): string {
+    if (this.sortConfig.field !== field) return '';
+    return this.sortConfig.direction === 'asc' ? '↑' : '↓';
+  }
+
+  goToPage(page: number): void {
+    if (page >= 0 && page < this.totalPages) {
+      this.currentPage = page;
+      this.loadSecurities();
+    }
+  }
+
+  getLastItem(): number {
+    return Math.min((this.currentPage + 1) * this.pageSize, this.totalElements);
+  }
+
+  onBuy(security: Security, event: Event): void {
+    event.stopPropagation();
+    // TODO: Navigate to buy page or open buy modal
+    console.log('Buy clicked:', security.ticker);
+  }
+
+  onRowClick(security: Security): void {
+    const type = this.activeTab === 'stocks' ? 'stock' : this.activeTab === 'futures' ? 'future' : 'forex';
+    this.router.navigate(['/securities', type, security.ticker]);
+  }
+
+  formatPrice(price: number): string {
+    return new Intl.NumberFormat('sr-RS', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(price);
+  }
+
+  formatVolume(volume: number): string {
+    return new Intl.NumberFormat('sr-RS').format(volume);
+  }
+
+  formatChange(change: number, changePercent: number): string {
+    const sign = change >= 0 ? '+' : '';
+    return `${sign}${changePercent.toFixed(2)}%`;
+  }
+
+  getChangeClass(change: number): string {
+    if (change > 0) return 'text-green-600';
+    if (change < 0) return 'text-red-600';
+    return 'text-muted-foreground';
+  }
+
+  trackBySecurity(index: number, security: Security): number {
+    return security.id;
+  }
+
+  // Futures specific
+  asFuture(security: Security): Future {
+    return security as Future;
+  }
+
+  // Forex specific
+  asForex(security: Security): Forex {
+    return security as Forex;
+  }
+
+  private syncDraftFilters(): void {
+    this.draftFilters = { ...this.filters };
+    delete this.draftFilters.search;
+  }
+}

@@ -18,6 +18,9 @@ import { AccountManagementComponent } from './features/employee/account-manageme
 import { AccountCardsPlaceholderComponent } from './features/employee/account-cards-placeholder/account-cards-placeholder.component';
 import { PaymentRecipientsComponent } from './features/client/components/payment-recipients/payment-recipients.component';
 import { PaymentHistoryComponent } from './features/client/components/payment-history/payment-history.component';
+import { SecuritiesListComponent } from './features/securities/components/securities-list/securities-list.component';
+import { SecurityDetailComponent } from './features/securities/components/security-detail/security-detail.component';
+import { StockDetailComponent } from './features/securities/components/stock-detail/stock-detail.component';
 
 const routes: Routes = [
   {
@@ -112,6 +115,26 @@ const routes: Routes = [
   {
     path: 'payments',
     component: PaymentHistoryComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'securities',
+    component: SecuritiesListComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'securities/stock/:ticker',
+    component: StockDetailComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'securities/future/:ticker',
+    component: SecurityDetailComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'securities/forex/:ticker',
+    component: SecurityDetailComponent,
     canActivate: [authGuard]
   },
   {

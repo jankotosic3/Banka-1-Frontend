@@ -1,0 +1,115 @@
+// Stock detail component styles
+
+:host {
+  display: block;
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 300px;
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// Change colors
+.text-green-600 {
+  color: #16a34a;
+}
+
+.text-red-600 {
+  color: #dc2626;
+}
+
+// Grid divider
+.divide-x > :not([hidden]) ~ :not([hidden]) {
+  border-left-width: 1px;
+  border-left-style: solid;
+}
+
+.divide-border > :not([hidden]) ~ :not([hidden]) {
+  border-color: hsl(var(--border));
+}
+
+// Options table
+.options-table-container {
+  overflow-x: auto;
+}
+
+.options-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th, td {
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  thead {
+    tr:first-child {
+      th {
+        padding: 0.75rem;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .calls-header {
+        background-color: rgba(22, 163, 74, 0.1);
+        color: #16a34a;
+        border-bottom: 2px solid #16a34a;
+      }
+
+      .puts-header {
+        background-color: rgba(220, 38, 38, 0.1);
+        color: #dc2626;
+        border-bottom: 2px solid #dc2626;
+      }
+
+      .strike-header {
+        background-color: hsl(var(--muted));
+        font-weight: 700;
+      }
+    }
+
+    .subheader {
+      th {
+        font-size: 0.65rem;
+        font-weight: 500;
+        color: hsl(var(--muted-foreground));
+        padding: 0.5rem;
+        background-color: hsl(var(--muted));
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      &:hover {
+        background-color: hsl(var(--muted) / 0.5);
+      }
+    }
+
+    td {
+      font-variant-numeric: tabular-nums;
+
+      &.in-the-money {
+        background-color: rgba(22, 163, 74, 0.08);
+      }
+    }
+
+    .strike-cell {
+      font-weight: 600;
+      background-color: hsl(var(--muted));
+      border-left: 2px solid hsl(var(--border));
+      border-right: 2px solid hsl(var(--border));
+    }
+  }
+}

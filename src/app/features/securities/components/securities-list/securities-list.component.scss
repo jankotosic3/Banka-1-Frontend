@@ -1,0 +1,36 @@
+// Securities list component styles
+// Uses global z-* classes from styles.scss
+
+:host {
+  display: block;
+}
+
+// Search input with icon
+.pl-10 {
+  padding-left: 2.5rem;
+}
+
+// Sort indicator
+th {
+  white-space: nowrap;
+  user-select: none;
+}
+
+// Table responsive adjustments
+.z-table {
+  th, td {
+    &:last-child {
+      text-align: center;
+      width: 100px;
+    }
+  }
+}
+
+// Change percentage colors
+.text-green-600 {
+  color: #16a34a;
+}
+
+.text-red-600 {
+  color: #dc2626;
+}
