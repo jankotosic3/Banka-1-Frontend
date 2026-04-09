@@ -50,9 +50,10 @@ export class ActuaryManagementComponent implements OnInit {
 
     this.actuaryService.getAgents(this.currentPage, this.pageSize, filters).subscribe({
       next: (data: any) => {
-        this.agents = data.content || [];
-        this.totalElements = data.totalElements || 0;
-        this.totalPages = data.totalPages || 0;
+        // Handle both direct array response and paginated response
+        this.agents = Array.isArray(data) ? data : (data.content || []);
+        this.totalElements = data.totalElements || this.agents.length;
+        this.totalPages = data.totalPages || 1;
         this.isLoading = false;
       },
       error: (err) => {
