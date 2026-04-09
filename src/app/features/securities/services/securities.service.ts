@@ -19,7 +19,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class SecuritiesService {
-  private readonly baseUrl = `${environment.apiUrl}/securities`;
+  private readonly baseUrl = `${environment.apiUrl}/order/orders`;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -32,9 +32,12 @@ export class SecuritiesService {
     size = 10,
     sort?: SortConfig
   ): Observable<SecuritiesPage<Stock>> {
-    // TODO: Replace with real API call when backend is ready
-    return this.getMockStocks(filters, page, size, sort);
+    let params = new HttpParams()
+      .set('status', "ALL")
+
+    return this.http.get<SecuritiesPage<Stock>>(`${this.baseUrl}`, { params });
   }
+
 
   /**
    * Get list of futures with filters and pagination
@@ -66,7 +69,7 @@ export class SecuritiesService {
    * Get stock by ticker
    */
   getStockByTicker(ticker: string): Observable<Stock> {
-    return this.getMockStocks({}, 0, 100).pipe(
+    return this.getStocks({}, 0, 100).pipe(
       map(page => {
         const stock = page.content.find(s => s.ticker === ticker);
         if (!stock) throw new Error(`Stock ${ticker} not found`);
@@ -130,86 +133,6 @@ export class SecuritiesService {
   }
 
   // ─── Mock Data Methods ────────────────────────────────────────────────────
-
-  private getMockStocks(
-    filters: SecuritiesFilters,
-    page: number,
-    size: number,
-    sort?: SortConfig
-  ): Observable<SecuritiesPage<Stock>> {
-    const allStocks: Stock[] = [
-      {
-        id: 1, ticker: 'TSLA', name: 'Tesla, Inc.', exchange: 'NASDAQ', price: 245.67, currency: 'USD',
-        change: 13.75, changePercent: 5.60, volume: 95234000, maintenanceMargin: 11166.82,
-        initialMarginCost: 12283.50, type: 'STOCK', lastUpdated: new Date().toISOString(),
-        high: 248.50, low: 232.10, open: 233.00, previousClose: 231.92, bid: 245.65, ask: 245.69
-      },
-      {
-        id: 2, ticker: 'AAPL', name: 'Apple Inc.', exchange: 'NYSE', price: 178.25, currency: 'USD',
-        change: 4.10, changePercent: 2.30, volume: 52341000, maintenanceMargin: 8102.27,
-        initialMarginCost: 8912.50, type: 'STOCK', lastUpdated: new Date().toISOString(),
-        high: 180.50, low: 175.20, open: 176.00, previousClose: 174.15, bid: 178.23, ask: 178.27
-      },
-      {
-        id: 3, ticker: 'AMZN', name: 'Amazon.com Inc.', exchange: 'NASDAQ', price: 156.34, currency: 'USD',
-        change: -0.78, changePercent: -0.50, volume: 38912000, maintenanceMargin: 7106.36,
-        initialMarginCost: 7817.00, type: 'STOCK', lastUpdated: new Date().toISOString(),
-        high: 158.90, low: 154.50, open: 157.50, previousClose: 157.12, bid: 156.32, ask: 156.36
-      },
-      {
-        id: 4, ticker: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ', price: 412.80, currency: 'EUR',
-        change: -4.95, changePercent: -1.20, volume: 28934000, maintenanceMargin: 18763.64,
-        initialMarginCost: 20640.00, type: 'STOCK', lastUpdated: new Date().toISOString(),
-        high: 420.00, low: 410.50, open: 418.00, previousClose: 417.75, bid: 412.78, ask: 412.82
-      },
-      {
-        id: 5, ticker: 'SIE.DE', name: 'Siemens AG', exchange: 'FWB', price: 178.45, currency: 'EUR',
-        change: 2.14, changePercent: 1.20, volume: 6789012, maintenanceMargin: 8111.36,
-        initialMarginCost: 8922.50, type: 'STOCK', lastUpdated: new Date().toISOString(),
-        high: 180.20, low: 175.80, open: 176.50, previousClose: 176.31, bid: 178.43, ask: 178.47
-      },
-      {
-        id: 6, ticker: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ', price: 141.80, currency: 'USD',
-        change: 1.42, changePercent: 1.01, volume: 23456000, maintenanceMargin: 6445.45,
-        initialMarginCost: 7090.00, type: 'STOCK', lastUpdated: new Date().toISOString(),
-        high: 143.50, low: 139.80, open: 140.50, previousClose: 140.38, bid: 141.78, ask: 141.82
-      },
-      {
-        id: 7, ticker: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ', price: 875.50, currency: 'USD',
-        change: 25.65, changePercent: 3.02, volume: 45678000, maintenanceMargin: 39795.45,
-        initialMarginCost: 43775.00, type: 'STOCK', lastUpdated: new Date().toISOString(),
-        high: 890.00, low: 850.00, open: 855.00, previousClose: 849.85, bid: 875.45, ask: 875.55
-      },
-      {
-        id: 8, ticker: 'META', name: 'Meta Platforms Inc.', exchange: 'NASDAQ', price: 485.30, currency: 'USD',
-        change: -8.25, changePercent: -1.67, volume: 18234000, maintenanceMargin: 22059.09,
-        initialMarginCost: 24265.00, type: 'STOCK', lastUpdated: new Date().toISOString(),
-        high: 495.00, low: 482.00, open: 493.50, previousClose: 493.55, bid: 485.28, ask: 485.32
-      },
-    ];
-
-    let filtered = this.applyFilters(allStocks, filters);
-
-    // Apply bid/ask filters for stocks
-    if (filters.bidMin !== undefined) {
-      filtered = filtered.filter(s => s.bid >= filters.bidMin!);
-    }
-    if (filters.bidMax !== undefined) {
-      filtered = filtered.filter(s => s.bid <= filters.bidMax!);
-    }
-    if (filters.askMin !== undefined) {
-      filtered = filtered.filter(s => s.ask >= filters.askMin!);
-    }
-    if (filters.askMax !== undefined) {
-      filtered = filtered.filter(s => s.ask <= filters.askMax!);
-    }
-
-    if (sort) {
-      filtered = this.applySorting(filtered, sort);
-    }
-
-    return this.paginate(filtered, page, size);
-  }
 
   private getMockFutures(
     filters: SecuritiesFilters,
