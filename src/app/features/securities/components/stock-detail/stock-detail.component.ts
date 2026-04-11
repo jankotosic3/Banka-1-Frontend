@@ -122,8 +122,10 @@ export class StockDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadSettlementDates(): void {
+    if (!this.stock) return;
+
     this.securitiesService
-      .getOptionSettlementDates(this.ticker)
+      .getOptionSettlementDates(this.stock.id.toString())
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (dates) => {
@@ -140,10 +142,10 @@ export class StockDetailComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadOptionChain(): void {
-    if (!this.selectedSettlementDate) return;
+    if (!this.selectedSettlementDate || !this.stock) return;
 
     this.securitiesService
-      .getOptionChain(this.ticker, this.selectedSettlementDate)
+      .getOptionChain(this.stock.id.toString(), this.selectedSettlementDate)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (chain) => {

@@ -277,148 +277,62 @@ export class SecuritiesService {
   }
 
   /**
-   * Get option chain for a stock
+   * Get option chain for a stock from backend optionGroups
+   * Note: ticker parameter is expected to be the stock id
    */
   getOptionChain(ticker: string, settlementDate: string): Observable<OptionChain> {
-    return this.getMockOptionChain(ticker, settlementDate);
+    const params = new HttpParams().set('period', 'DAY');
+    
+    return this.http.get<any>(`${environment.apiUrl}/stock/api/listings/${ticker}`, { params }).pipe(
+      map((response: any) => {
+        // Extract optionGroups and find matching settlement date
+        const optionGroups = response.optionGroups || [];
+        const matching = optionGroups.find((og: any) => og.settlementDate === settlementDate);
+        
+        if (!matching) {
+          // Return empty option chain if settlement date not found
+          return {
+            settlementDate,
+            daysToExpiry: 0,
+            calls: [],
+            puts: [],
+            strikes: []
+          } as OptionChain;
+        }
+
+        // Calculate days to expiry
+        const expiry = new Date(settlementDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const daysToExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        return {
+          settlementDate: matching.settlementDate,
+          daysToExpiry,
+          calls: matching.options?.filter((opt: any) => opt.type === 'CALL') || [],
+          puts: matching.options?.filter((opt: any) => opt.type === 'PUT') || [],
+          strikes: [...new Set((matching.options || []).map((opt: any) => opt.strike))].sort((a: any, b: any) => a - b)
+        } as OptionChain;
+      })
+    );
   }
 
   /**
-   * Get available settlement dates for options
+   * Get available settlement dates for options from backend optionGroups
+   * Note: ticker parameter is expected to be the stock id
    */
   getOptionSettlementDates(ticker: string): Observable<string[]> {
-    return of([
-      '2026-03-31',
-      '2026-04-30',
-      '2026-05-31',
-      '2026-06-30',
-      '2026-09-30',
-      '2026-12-31',
-    ]).pipe(delay(100));
-  }
-
-  // ─── Mock Data Methods ────────────────────────────────────────────────────
-
-  private getMockOptionChain(ticker: string, settlementDate: string): Observable<OptionChain> {
-    const currentPrice = 178.25; // AAPL example
-    const strikes = [165, 170, 175, 180, 185, 190, 195, 200];
-
-    const expiry = new Date(settlementDate);
-    const today = new Date();
-    const daysToExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    const calls: StockOption[] = strikes.map(strike => ({
-      strike,
-      type: 'CALL' as const,
-      last: Math.max(0.01, currentPrice - strike + (Math.random() * 5)),
-      theta: -(Math.random() * 0.15 + 0.01),
-      bid: Math.max(0.01, currentPrice - strike + (Math.random() * 4)),
-      ask: Math.max(0.02, currentPrice - strike + (Math.random() * 6)),
-      volume: Math.floor(Math.random() * 5000) + 100,
-      openInterest: Math.floor(Math.random() * 10000) + 500,
-      inTheMoney: strike < currentPrice,
-    }));
-
-    const puts: StockOption[] = strikes.map(strike => ({
-      strike,
-      type: 'PUT' as const,
-      last: Math.max(0.01, strike - currentPrice + (Math.random() * 5)),
-      theta: -(Math.random() * 0.15 + 0.01),
-      bid: Math.max(0.01, strike - currentPrice + (Math.random() * 4)),
-      ask: Math.max(0.02, strike - currentPrice + (Math.random() * 6)),
-      volume: Math.floor(Math.random() * 5000) + 100,
-      openInterest: Math.floor(Math.random() * 10000) + 500,
-      inTheMoney: strike > currentPrice,
-    }));
-
-    return of({
-      settlementDate,
-      daysToExpiry,
-      calls,
-      puts,
-      strikes,
-    }).pipe(delay(200));
-  }
-
-  // ─── Helper Methods ────────────────────────────────────────────────────────
-
-  private applyFilters<T extends Security>(items: T[], filters: SecuritiesFilters): T[] {
-    let result = [...items];
-
-    if (filters.search) {
-      const search = filters.search.toLowerCase();
-      result = result.filter(item =>
-        item.ticker.toLowerCase().includes(search) ||
-        item.name.toLowerCase().includes(search)
-      );
-    }
-
-    if (filters.exchange) {
-      result = result.filter(item =>
-        item.exchange.toLowerCase().includes(filters.exchange!.toLowerCase())
-      );
-    }
-
-    if (filters.priceMin !== undefined) {
-      result = result.filter(item => item.price >= filters.priceMin!);
-    }
-    if (filters.priceMax !== undefined) {
-      result = result.filter(item => item.price <= filters.priceMax!);
-    }
-
-    if (filters.volumeMin !== undefined) {
-      result = result.filter(item => item.volume >= filters.volumeMin!);
-    }
-    if (filters.volumeMax !== undefined) {
-      result = result.filter(item => item.volume <= filters.volumeMax!);
-    }
-
-    if (filters.marginMin !== undefined) {
-      result = result.filter(item => item.maintenanceMargin >= filters.marginMin!);
-    }
-    if (filters.marginMax !== undefined) {
-      result = result.filter(item => item.maintenanceMargin <= filters.marginMax!);
-    }
-
-    return result;
-  }
-
-  private applySorting<T extends Security>(items: T[], sort: SortConfig): T[] {
-    return [...items].sort((a, b) => {
-      let aVal: number | string;
-      let bVal: number | string;
-
-      switch (sort.field) {
-        case 'price': aVal = a.price; bVal = b.price; break;
-        case 'volume': aVal = a.volume; bVal = b.volume; break;
-        case 'change': aVal = a.changePercent; bVal = b.changePercent; break;
-        case 'margin': aVal = a.maintenanceMargin; bVal = b.maintenanceMargin; break;
-        case 'ticker': aVal = a.ticker; bVal = b.ticker; break;
-        case 'name': aVal = a.name; bVal = b.name; break;
-        default: return 0;
-      }
-
-      if (typeof aVal === 'string') {
-        const comparison = aVal.localeCompare(bVal as string);
-        return sort.direction === 'asc' ? comparison : -comparison;
-      }
-
-      return sort.direction === 'asc' ? aVal - (bVal as number) : (bVal as number) - aVal;
-    });
-  }
-
-  private paginate<T>(items: T[], page: number, size: number): Observable<SecuritiesPage<T>> {
-    const totalElements = items.length;
-    const totalPages = Math.ceil(totalElements / size);
-    const start = page * size;
-    const content = items.slice(start, start + size);
-
-    return of({
-      content,
-      totalElements,
-      totalPages,
-      number: page,
-      size,
-    }).pipe(delay(300));
+    const params = new HttpParams().set('period', 'DAY');
+    
+    return this.http.get<any>(`${environment.apiUrl}/stock/api/listings/${ticker}`, { params }).pipe(
+      map((response: any) => {
+        const optionGroups = response.optionGroups || [];
+        const dates = optionGroups
+          .map((og: any) => og.settlementDate)
+          .filter((date: string | null) => date !== null && date !== undefined)
+          .sort();
+        return dates;
+      })
+    );
   }
 }
