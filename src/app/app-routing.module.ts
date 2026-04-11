@@ -30,177 +30,175 @@ import { LoanRequestManagementComponent } from './features/employee/components/l
 import { LoanManagementComponent } from './features/employee/components/loan-management/loan-management.component';
 import { LoanRequestComponent } from './features/client/components/loan-request/loan-request.component';
 
-
 const routes: Routes = [
   {
     path: 'home',
     loadChildren: () =>
       import('./features/client/client.module').then((m) => m.ClientModule),
-     canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: 'employees/new',
     component: EmployeeCreateComponent,
-     canActivate: [authGuard, roleGuard],
-    data: { permission: 'EMPLOYEE_MANAGE_ALL' }
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'EMPLOYEE_MANAGE_ALL' },
   },
   {
     path: 'accounts/new',
     component: AccountCreateComponent,
-     canActivate: [authGuard, roleGuard],
-    data: { permission: 'CLIENT_MANAGE' }
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'CLIENT_MANAGE' },
   },
   {
     path: 'clients',
     component: ClientListComponent,
-     canActivate: [authGuard, roleGuard],
-    data: { permission: 'CLIENT_MANAGE' }
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'CLIENT_MANAGE' },
   },
   {
     path: 'clients/:id',
     component: ClientDetailComponent,
     canActivate: [authGuard, roleGuard],
-    data: { permission: 'CLIENT_MANAGE' }
+    data: { permission: 'CLIENT_MANAGE' },
   },
   {
     path: 'users',
-    loadChildren: () => import('./features/user/user.module').then((m) => m.UserModule)
+    loadChildren: () =>
+      import('./features/user/user.module').then((m) => m.UserModule),
   },
   {
     path: 'employees',
     component: EmployeeListComponent,
     canActivate: [authGuard, roleGuard],
-    data: { permission: 'EMPLOYEE_MANAGE_ALL' }
+    data: { permission: 'EMPLOYEE_MANAGE_ALL' },
   },
   {
     path: 'accounts/payment/new',
     component: NewPaymentComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: 'accounts',
     component: AccountListComponent,
-     canActivate: [authGuard],
+    canActivate: [authGuard],
   },
   {
-  path: 'account-management',
-  component: AccountManagementComponent,
-  canActivate: [authGuard, roleGuard],
-  data: { permission: 'CLIENT_MANAGE' }
-},
-{
-  path: 'account-cards',
-  component: AccountCardsPlaceholderComponent,
-   canActivate: [authGuard, roleGuard],
-  data: { permission: 'CLIENT_MANAGE' }
-},
-{
-  path: 'actuary-management',
-  component: ActuaryManagementComponent,
-  canActivate: [authGuard, roleGuard],
-  data: { permission: 'FUND_AGENT_MANAGE' }
-},
-
+    path: 'account-management',
+    component: AccountManagementComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'CLIENT_MANAGE' },
+  },
   {
-  path: 'transfers/different',
-  component: TransferDiffComponent,
-  canActivate: [authGuard]
+    path: 'account-cards',
+    component: AccountCardsPlaceholderComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'CLIENT_MANAGE' },
+  },
+  {
+    path: 'actuary-management',
+    component: ActuaryManagementComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'FUND_AGENT_MANAGE' },
   },
 
   {
-  path: 'transfers/same',
-  component: TransferSameComponent,
-  canActivate: [authGuard]
+    path: 'transfers/different',
+    component: TransferDiffComponent,
+    canActivate: [authGuard],
   },
-    {
-  path: 'exchange',
-  component: ExchangeListComponent,
-  canActivate: [authGuard, roleGuard],
-  data: { permission: 'EMPLOYEE_MANAGE_ALL' }
-},
-    
 
+  {
+    path: 'transfers/same',
+    component: TransferSameComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'exchange',
+    component: ExchangeListComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'EMPLOYEE_MANAGE_ALL' },
+  },
   {
     path: '403',
-    component: ForbiddenComponent
+    component: ForbiddenComponent,
   },
   {
     path: '',
     loadChildren: () =>
-      import('./features/auth/auth.module').then((m) => m.AuthModule)
+      import('./features/auth/auth.module').then((m) => m.AuthModule),
   },
   {
     path: 'payments/recipients',
     component: PaymentRecipientsComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: 'payments',
     component: PaymentHistoryComponent,
-     canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: 'loans',
     component: LoanListComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: 'loans/request',
     component: LoanRequestComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: 'loans/:id',
     component: LoanDetailsComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
-  path: 'loan-request-management',
-  component: LoanRequestManagementComponent,
-  canActivate: [authGuard, roleGuard],
-  data: { permission: 'CLIENT_MANAGE' }
-},
-{
-  path: 'loan-management',
-  component: LoanManagementComponent,
-  canActivate: [authGuard, roleGuard],
-  data: { permission: 'CLIENT_MANAGE' }
-},
+    path: 'loan-request-management',
+    component: LoanRequestManagementComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'CLIENT_MANAGE' },
+  },
+  {
+    path: 'loan-management',
+    component: LoanManagementComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'CLIENT_MANAGE' },
+  },
   {
     path: 'securities',
     component: SecuritiesListComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: 'securities/stock/:ticker',
     component: StockDetailComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: 'securities/future/:ticker',
     component: SecurityDetailComponent,
     canActivate: [authGuard],
-    data: { securityType: 'future' }
+    data: { securityType: 'future' },
   },
   {
     path: 'securities/forex/:ticker',
     component: SecurityDetailComponent,
     canActivate: [authGuard],
-    data: { securityType: 'forex' }
+    data: { securityType: 'forex' },
   },
   {
     path: 'exchange',
     component: ExchangeRateComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: '**',
-    component: NotFoundComponent
-  }
+    component: NotFoundComponent,
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

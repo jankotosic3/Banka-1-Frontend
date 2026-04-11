@@ -48,8 +48,48 @@ export class SecuritiesService {
     size = 10,
     sort?: SortConfig
   ): Observable<SecuritiesPage<Future>> {
-    // TODO: Replace with real API call when backend is ready
-    return this.getMockFutures(filters, page, size, sort);
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sortBy', sort?.field || 'ticker')
+      .set('sortDirection', sort?.direction || 'asc');
+
+    return this.http.get<any>(`${environment.apiUrl}/stock/api/listings/futures`, { params }).pipe(
+      map(response => ({
+        ...response,
+        content: response.content.map((item: any) => {
+          // Handle zero/null prices
+          const price = item.price || 1.0;
+          const change = item.change || 0;
+          const changePercent = price > 0 ? (change / price) * 100 : 0;
+          
+          return {
+            id: item.listingId,
+            ticker: item.ticker,
+            name: item.name,
+            exchange: item.exchangeMICCode,
+            price: price,
+            currency: 'USD',
+            change: change,
+            changePercent: changePercent,
+            volume: item.volume || 0,
+            maintenanceMargin: (item.initialMarginCost || 0) * 0.8,
+            initialMarginCost: item.initialMarginCost || 0,
+            type: 'FUTURE' as const,
+            lastUpdated: new Date().toISOString(),
+            settlementDate: item.settlementDate,
+            contractSize: 1,
+            openInterest: 0,
+            high: price * 1.02,
+            low: price * 0.98,
+            open: price,
+            previousClose: price - change,
+            bid: price > 0 ? price - 0.01 : 0.99,
+            ask: price > 0 ? price + 0.01 : 1.01,
+          } as Future;
+        })
+      }))
+    );
   }
 
   /**
@@ -61,8 +101,48 @@ export class SecuritiesService {
     size = 10,
     sort?: SortConfig
   ): Observable<SecuritiesPage<Forex>> {
-    // TODO: Replace with real API call when backend is ready
-    return this.getMockForex(filters, page, size, sort);
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sortBy', sort?.field || 'ticker')
+      .set('sortDirection', sort?.direction || 'asc');
+
+    return this.http.get<any>(`${environment.apiUrl}/stock/api/listings/forex`, { params }).pipe(
+      map(response => ({
+        ...response,
+        content: response.content.map((item: any) => {
+          // Handle zero/null prices
+          const price = item.price || 1.0;
+          const change = item.change || 0;
+          const changePercent = price > 0 ? (change / price) * 100 : 0;
+          
+          return {
+            id: item.listingId,
+            ticker: item.ticker,
+            name: item.name,
+            exchange: item.exchangeMICCode,
+            price: price,
+            currency: 'USD',
+            change: change,
+            changePercent: changePercent,
+            volume: item.volume || 0,
+            maintenanceMargin: (item.initialMarginCost || 0) * 0.8,
+            initialMarginCost: item.initialMarginCost || 0,
+            type: 'FOREX' as const,
+            lastUpdated: new Date().toISOString(),
+            baseCurrency: item.ticker.split('/')[0] || 'USD',
+            quoteCurrency: item.ticker.split('/')[1] || 'USD',
+            bid: price > 0 ? price - 0.0001 : 0.9999,
+            ask: price > 0 ? price + 0.0001 : 1.0001,
+            spread: 0.0002,
+            high: price * 1.01,
+            low: price * 0.99,
+            open: price,
+            previousClose: price - change,
+          } as Forex;
+        })
+      }))
+    );
   }
 
   /**
@@ -79,14 +159,81 @@ export class SecuritiesService {
   }
 
   /**
-   * Get future by ticker
+   * Get future by id (listingId)
    */
-  getFutureByTicker(ticker: string): Observable<Future> {
-    return this.getMockFutures({}, 0, 100).pipe(
-      map(page => {
-        const future = page.content.find(f => f.ticker === ticker);
-        if (!future) throw new Error(`Future ${ticker} not found`);
-        return future;
+  getFutureById(id: number): Observable<Future> {
+    const params = new HttpParams().set('period', 'MONTH');
+    return this.http.get<any>(`${environment.apiUrl}/stock/api/listings/${id}`, { params }).pipe(
+      map((item: any) => {
+        // Handle zero/null prices
+        const price = item.price || 1.0;
+        const change = item.change || 0;
+        const changePercent = price > 0 ? (change / price) * 100 : 0;
+        
+        return {
+          id: item.listingId,
+          ticker: item.ticker,
+          name: item.name,
+          exchange: item.exchangeMICCode,
+          price: price,
+          currency: 'USD',
+          change: change,
+          changePercent: changePercent,
+          volume: item.volume || 0,
+          maintenanceMargin: (item.initialMarginCost || 0) * 0.8,
+          initialMarginCost: item.initialMarginCost || 0,
+          type: 'FUTURE' as const,
+          lastUpdated: new Date().toISOString(),
+          settlementDate: item.settlementDate,
+          contractSize: 1,
+          openInterest: 0,
+          high: price * 1.02,
+          low: price * 0.98,
+          open: price,
+          previousClose: price - change,
+          bid: price > 0 ? price - 0.01 : 0.99,
+          ask: price > 0 ? price + 0.01 : 1.01,
+        } as Future;
+      })
+    );
+  }
+
+  /**
+   * Get forex by id (listingId)
+   */
+  getForexById(id: number): Observable<Forex> {
+    const params = new HttpParams().set('period', 'MONTH');
+    return this.http.get<any>(`${environment.apiUrl}/stock/api/listings/${id}`, { params }).pipe(
+      map((item: any) => {
+        // Handle zero/null prices
+        const price = item.price || 1.0;
+        const change = item.change || 0;
+        const changePercent = price > 0 ? (change / price) * 100 : 0;
+        
+        return {
+          id: item.listingId,
+          ticker: item.ticker,
+          name: item.name,
+          exchange: item.exchangeMICCode,
+          price: price,
+          currency: 'USD',
+          change: change,
+          changePercent: changePercent,
+          volume: item.volume || 0,
+          maintenanceMargin: (item.initialMarginCost || 0) * 0.8,
+          initialMarginCost: item.initialMarginCost || 0,
+          type: 'FOREX' as const,
+          lastUpdated: new Date().toISOString(),
+          baseCurrency: item.ticker.split('/')[0],
+          quoteCurrency: item.ticker.split('/')[1],
+          bid: price > 0 ? price - 0.0001 : 0.9999,
+          ask: price > 0 ? price + 0.0001 : 1.0001,
+          spread: 0.0002,
+          high: price * 1.01,
+          low: price * 0.99,
+          open: price,
+          previousClose: price - change,
+        } as Forex;
       })
     );
   }
@@ -108,7 +255,38 @@ export class SecuritiesService {
    * Get price history for a security
    */
   getPriceHistory(ticker: string, period: string): Observable<PriceHistory> {
-    return this.getMockPriceHistory(ticker, period);
+    // Map period from component format to API format
+    const periodMap: Record<string, string> = {
+      'day': 'DAY',
+      'week': 'WEEK',
+      'month': 'MONTH',
+      'year': 'YEAR',
+      '5year': 'FIVE_YEARS',
+      'all': 'ALL'
+    };
+
+    const apiPeriod = periodMap[period] || 'MONTH';
+
+    // Extract listing id from ticker (ticker contains the id in this context)
+    const listingId = ticker;
+
+    const params = new HttpParams().set('period', apiPeriod);
+
+    return this.http.get<any>(`${environment.apiUrl}/stock/api/listings/${listingId}`, { params }).pipe(
+      map((response: any) => {
+        // Map the response to PriceHistory format
+        const priceData = response.priceHistory ? response.priceHistory.map((point: any) => ({
+          date: point.date,
+          price: point.price,
+          volume: point.volume || 0
+        })) : [];
+        return {
+          ticker: response.ticker || ticker,
+          period: period,
+          data: priceData
+        } as PriceHistory;
+      })
+    );
   }
 
   /**
@@ -133,81 +311,6 @@ export class SecuritiesService {
   }
 
   // ─── Mock Data Methods ────────────────────────────────────────────────────
-
-  private getMockFutures(
-    filters: SecuritiesFilters,
-    page: number,
-    size: number,
-    sort?: SortConfig
-  ): Observable<SecuritiesPage<Future>> {
-    const allFutures: Future[] = [
-      {
-        id: 101, ticker: 'ESM26', name: 'E-mini S&P 500 Jun 26', exchange: 'CME', price: 5245.50, currency: 'USD',
-        change: 32.25, changePercent: 0.62, volume: 1234567, maintenanceMargin: 12500.00,
-        initialMarginCost: 13750.00, type: 'FUTURE', lastUpdated: new Date().toISOString(),
-        settlementDate: '2026-06-20', contractSize: 50, openInterest: 2345678,
-        high: 5260.00, low: 5210.00, open: 5215.00, previousClose: 5213.25, bid: 5245.25, ask: 5245.75
-      },
-      {
-        id: 102, ticker: 'CLM26', name: 'Crude Oil Jun 26', exchange: 'NYMEX', price: 78.45, currency: 'USD',
-        change: -1.23, changePercent: -1.54, volume: 567890, maintenanceMargin: 6500.00,
-        initialMarginCost: 7150.00, type: 'FUTURE', lastUpdated: new Date().toISOString(),
-        settlementDate: '2026-06-20', contractSize: 1000, openInterest: 456789,
-        high: 80.20, low: 77.80, open: 79.50, previousClose: 79.68, bid: 78.43, ask: 78.47
-      },
-      {
-        id: 103, ticker: 'GCM26', name: 'Gold Jun 26', exchange: 'COMEX', price: 2045.30, currency: 'USD',
-        change: 15.80, changePercent: 0.78, volume: 234567, maintenanceMargin: 9500.00,
-        initialMarginCost: 10450.00, type: 'FUTURE', lastUpdated: new Date().toISOString(),
-        settlementDate: '2026-06-26', contractSize: 100, openInterest: 345678,
-        high: 2055.00, low: 2030.00, open: 2032.00, previousClose: 2029.50, bid: 2045.10, ask: 2045.50
-      },
-      {
-        id: 104, ticker: 'NQM26', name: 'E-mini NASDAQ-100 Jun 26', exchange: 'CME', price: 18234.75, currency: 'USD',
-        change: 125.50, changePercent: 0.69, volume: 456789, maintenanceMargin: 18500.00,
-        initialMarginCost: 20350.00, type: 'FUTURE', lastUpdated: new Date().toISOString(),
-        settlementDate: '2026-06-20', contractSize: 20, openInterest: 567890,
-        high: 18350.00, low: 18100.00, open: 18120.00, previousClose: 18109.25, bid: 18234.50, ask: 18235.00
-      },
-      {
-        id: 105, ticker: 'ZWN26', name: 'Wheat Jul 26', exchange: 'CBOT', price: 625.50, currency: 'USD',
-        change: -8.25, changePercent: -1.30, volume: 123456, maintenanceMargin: 2200.00,
-        initialMarginCost: 2420.00, type: 'FUTURE', lastUpdated: new Date().toISOString(),
-        settlementDate: '2026-07-14', contractSize: 5000, openInterest: 234567,
-        high: 635.00, low: 620.00, open: 633.00, previousClose: 633.75, bid: 625.25, ask: 625.75
-      },
-    ];
-
-    let filtered = this.applyFilters(allFutures, filters);
-
-    // Apply settlement date filter for futures
-    if (filters.settlementDateFrom) {
-      filtered = filtered.filter(f => f.settlementDate >= filters.settlementDateFrom!);
-    }
-    if (filters.settlementDateTo) {
-      filtered = filtered.filter(f => f.settlementDate <= filters.settlementDateTo!);
-    }
-
-    // Apply bid/ask filters for futures
-    if (filters.bidMin !== undefined) {
-      filtered = filtered.filter(f => f.bid >= filters.bidMin!);
-    }
-    if (filters.bidMax !== undefined) {
-      filtered = filtered.filter(f => f.bid <= filters.bidMax!);
-    }
-    if (filters.askMin !== undefined) {
-      filtered = filtered.filter(f => f.ask >= filters.askMin!);
-    }
-    if (filters.askMax !== undefined) {
-      filtered = filtered.filter(f => f.ask <= filters.askMax!);
-    }
-
-    if (sort) {
-      filtered = this.applySorting(filtered, sort);
-    }
-
-    return this.paginate(filtered, page, size);
-  }
 
   private getMockForex(
     filters: SecuritiesFilters,

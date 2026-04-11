@@ -52,15 +52,15 @@ export interface EmployeeLoanFilters {
 }
 
 // TODO: set to false when backend is ready
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 @Injectable({
   providedIn: 'root'
 })
 export class LoanService {
-  private readonly loansUrl = `${environment.apiUrl}/api/loans`;
-  private readonly myLoansUrl = `${environment.apiUrl}/api/loans/my-loans`;
-  private readonly requestsUrl = `${environment.apiUrl}/api/loans/requests`;
+  private readonly loansUrl = `${environment.apiUrl}/credit/api/loans`;
+  private readonly myLoansUrl = `${environment.apiUrl}/credit/api/loans/my-loans`;
+  private readonly requestsUrl = `${environment.apiUrl}/credit/api/loans/requests`;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -171,7 +171,7 @@ export class LoanService {
     }
 
     // TODO
-    return this.http.get<LoanPage<Loan>>(this.loansUrl, { params });
+    return this.http.get<LoanPage<Loan>>(this.loansUrl + '/all', { params });
   }
 
   getEmployeeLoanById(id: string | number): Observable<Loan> {

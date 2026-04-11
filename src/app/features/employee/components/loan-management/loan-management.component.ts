@@ -106,7 +106,28 @@ export class LoanManagementComponent implements OnInit, OnDestroy {
   }
 
   loadLoans(): void {
-    this.reload$.next();
+    this.isLoading = true;
+    this.loanService.getAllLoans(
+      {
+        loanType: this.filterLoanType,
+        accountNumber: this.filterAccountNumber,
+        status: this.filterStatus,
+      },
+      this.currentPage,
+      this.pageSize
+    ).pipe(
+      catchError((err) => {
+        this.isLoading = false;
+        this.toastService.error(err?.error?.message || 'Greška pri učitavanju kredita.');
+        return EMPTY;
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe((data) => {
+      this.loans = data.content ?? [];
+      this.totalElements = data.totalElements ?? 0;
+      this.totalPages = data.totalPages ?? 0;
+      this.isLoading = false;
+    });
   }
 
   onFilterChange(): void {

@@ -185,7 +185,7 @@ export class SecuritiesListComponent implements OnInit, OnDestroy {
 
   onRowClick(security: Security): void {
     const type = this.activeTab === 'stocks' ? 'stock' : this.activeTab === 'futures' ? 'future' : 'forex';
-    this.router.navigate(['/securities', type, security.ticker]);
+    this.router.navigate(['/securities', type, security.id]);
   }
 
   formatPrice(price: number): string {

@@ -32,7 +32,7 @@ export class SecurityDetailComponent implements OnInit, OnDestroy, AfterViewInit
   private readonly destroy$ = new Subject<void>();
 
   securityType: 'future' | 'forex' = 'future';
-  ticker = '';
+  id: number | null = null;
 
   security: Security | null = null;
   priceHistory: PriceHistory | null = null;
@@ -61,7 +61,8 @@ export class SecurityDetailComponent implements OnInit, OnDestroy, AfterViewInit
   ngOnInit(): void {
     this.securityType = this.route.snapshot.data['securityType'];
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe((params) => {
-      this.ticker = params['ticker'];
+      // Route still uses 'ticker' parameter name, but it now contains the id value
+      this.id = params['ticker'] ? parseInt(params['ticker'], 10) : null;
       this.loadSecurity();
     });
   }
@@ -79,10 +80,16 @@ export class SecurityDetailComponent implements OnInit, OnDestroy, AfterViewInit
     this.isLoading = true;
     this.errorMessage = '';
 
+    if (!this.id) {
+      this.errorMessage = 'Greška pri učitavanju hartije od vrednosti.';
+      this.isLoading = false;
+      return;
+    }
+
     const request$: Observable<Security> =
       this.securityType === 'future'
-        ? this.securitiesService.getFutureByTicker(this.ticker)
-        : this.securitiesService.getForexByTicker(this.ticker);
+        ? this.securitiesService.getFutureById(this.id)
+        : this.securitiesService.getForexById(this.id);
 
     request$.pipe(takeUntil(this.destroy$)).subscribe({
       next: (security: Security) => {
@@ -91,7 +98,6 @@ export class SecurityDetailComponent implements OnInit, OnDestroy, AfterViewInit
         this.loadPriceHistory();
       },
       error: (err: Error) => {
-        console.error('Error loading security:', err);
         this.errorMessage = 'Greška pri učitavanju hartije od vrednosti.';
         this.isLoading = false;
       },
@@ -99,11 +105,22 @@ export class SecurityDetailComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   loadPriceHistory(): void {
+    if (!this.security || !this.id) return;
+    
     this.securitiesService
-      .getPriceHistory(this.ticker, this.selectedPeriod)
+      .getPriceHistory(this.id.toString(), this.selectedPeriod)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (history) => {
+          // If no historical data, use current price as fallback
+          if (!history.data || history.data.length === 0) {
+            history.data = [{
+              date: new Date().toISOString(),
+              price: this.security!.price,
+              volume: this.security!.volume || 0
+            }];
+          }
+          
           this.priceHistory = history;
           this.isLoading = false;
           setTimeout(() => this.drawChart(), 0);
@@ -176,7 +193,15 @@ export class SecurityDetailComponent implements OnInit, OnDestroy, AfterViewInit
     const prices = data.map((d) => d.price);
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
-    const priceRange = maxPrice - minPrice || 1;
+    let priceRange = maxPrice - minPrice;
+    
+    // If there's only one data point, add some padding to show it in the middle
+    if (priceRange === 0) {
+      priceRange = Math.abs(minPrice) * 0.2 || 1;
+    }
+    
+    const displayMin = minPrice - priceRange * 0.1;
+    const displayRange = priceRange * 1.2;
 
     // Draw grid lines
     ctx.strokeStyle = '#e5e7eb';
@@ -191,7 +216,7 @@ export class SecurityDetailComponent implements OnInit, OnDestroy, AfterViewInit
       ctx.stroke();
 
       // Price labels
-      const price = maxPrice - (priceRange / 4) * i;
+      const price = (minPrice + displayRange) - (displayRange / 4) * i;
       ctx.fillStyle = '#6b7280';
       ctx.font = '11px sans-serif';
       ctx.textAlign = 'right';
@@ -205,21 +230,38 @@ export class SecurityDetailComponent implements OnInit, OnDestroy, AfterViewInit
     ctx.lineJoin = 'round';
 
     data.forEach((point, index) => {
-      const x = padding + (chartWidth / (data.length - 1)) * index;
-      const y = padding + chartHeight - ((point.price - minPrice) / priceRange) * chartHeight;
+      const xPos = data.length > 1 
+        ? padding + (chartWidth / (data.length - 1)) * index
+        : padding + chartWidth / 2;
+      const y = padding + chartHeight - ((point.price - displayMin) / displayRange) * chartHeight;
 
       if (index === 0) {
-        ctx.moveTo(x, y);
+        ctx.moveTo(xPos, y);
       } else {
-        ctx.lineTo(x, y);
+        ctx.lineTo(xPos, y);
       }
     });
 
     ctx.stroke();
 
+    // Draw data point markers
+    ctx.fillStyle = '#16a34a';
+    data.forEach((point, index) => {
+      const xPos = data.length > 1 
+        ? padding + (chartWidth / (data.length - 1)) * index
+        : padding + chartWidth / 2;
+      const y = padding + chartHeight - ((point.price - displayMin) / displayRange) * chartHeight;
+      
+      ctx.beginPath();
+      ctx.arc(xPos, y, 3, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+
     // Fill area under line
-    const lastX = padding + chartWidth;
-    const lastY = padding + chartHeight - ((data[data.length - 1].price - minPrice) / priceRange) * chartHeight;
+    const lastX = data.length > 1 
+      ? padding + chartWidth
+      : padding + chartWidth / 2;
+    const lastY = padding + chartHeight - ((data[data.length - 1].price - displayMin) / displayRange) * chartHeight;
 
     ctx.lineTo(lastX, height - padding);
     ctx.lineTo(padding, height - padding);
@@ -238,8 +280,12 @@ export class SecurityDetailComponent implements OnInit, OnDestroy, AfterViewInit
 
     const labelCount = Math.min(5, data.length);
     for (let i = 0; i < labelCount; i++) {
-      const dataIndex = Math.floor((i / (labelCount - 1)) * (data.length - 1));
-      const x = padding + (chartWidth / (data.length - 1)) * dataIndex;
+      const dataIndex = labelCount > 1
+        ? Math.floor((i / (labelCount - 1)) * (data.length - 1))
+        : 0;
+      const x = data.length > 1
+        ? padding + (chartWidth / (data.length - 1)) * dataIndex
+        : padding + chartWidth / 2;
       const date = new Date(data[dataIndex].date);
       const label = date.toLocaleDateString('sr-RS', { month: 'short', year: '2-digit' });
       ctx.fillText(label, x, height - padding + 15);

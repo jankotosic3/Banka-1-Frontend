@@ -97,6 +97,10 @@
             </button>
           </div>
 
+          <div *ngIf="priceHistory?.data?.length === 1" class="text-xs text-muted-foreground mb-3 italic">
+            Ograničeni istorijski podaci - prikazana je trenutna cena
+          </div>
+
           <div class="chart-container">
             <canvas #chartCanvas></canvas>
           </div>
