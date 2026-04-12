@@ -82,11 +82,12 @@
 
             <!-- Limit column -->
             <td class="text-right">
-              <span *ngIf="editingAgentId !== agent.id" class="font-medium">
+              <span *ngIf="editingAgentId !== agent.employeeId" class="font-medium">
                 {{ formatCurrency(agent.limit) }}
               </span>
-              <div *ngIf="editingAgentId === agent.id" class="flex items-center gap-2 justify-end">
-                <input type="number" [(ngModel)]="editLimitValue"
+              <div *ngIf="editingAgentId === agent.employeeId" class="flex items-center gap-2 justify-end">
+                <input type="number" [ngModel]="getEditLimitValue(agent)"
+                       (ngModelChange)="setEditLimitValue(agent, $event)"
                        class="z-input w-36 text-right" min="0" step="1000"
                        data-cy="edit-limit-input"
                        (keydown.enter)="saveLimit(agent)"
@@ -108,7 +109,7 @@
             <td>
               <div class="flex gap-1 justify-end">
                 <!-- Edit limit mode: Save and Cancel -->
-                <ng-container *ngIf="editingAgentId === agent.id">
+                <ng-container *ngIf="editingAgentId === agent.employeeId">
                   <button (click)="saveLimit(agent)" title="Sačuvaj"
                           class="z-btn-primary z-btn-sm" data-cy="save-limit-btn">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -123,9 +124,10 @@
                 </ng-container>
 
                 <!-- Normal mode: Edit and Reset buttons -->
-                <ng-container *ngIf="editingAgentId !== agent.id">
+                <ng-container *ngIf="editingAgentId !== agent.employeeId">
                   <button (click)="startEditLimit(agent)" title="Izmeni limit"
-                          class="w-8 h-8 inline-flex items-center justify-center border border-border bg-card rounded-lg cursor-pointer text-muted-foreground hover:bg-secondary hover:text-primary hover:border-green-200 transition-all"
+                          [disabled]="editingAgentId !== null"
+                          class="w-8 h-8 inline-flex items-center justify-center border border-border bg-card rounded-lg cursor-pointer text-muted-foreground hover:bg-secondary hover:text-primary hover:border-green-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                           data-cy="edit-limit-btn">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -133,7 +135,8 @@
                     </svg>
                   </button>
                   <button (click)="promptResetLimit(agent)" title="Resetuj iskorišćeni limit"
-                          class="w-8 h-8 inline-flex items-center justify-center border border-border bg-card rounded-lg cursor-pointer text-muted-foreground hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition-all"
+                          [disabled]="editingAgentId !== null"
+                          class="w-8 h-8 inline-flex items-center justify-center border border-border bg-card rounded-lg cursor-pointer text-muted-foreground hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                           data-cy="reset-limit-btn">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="1 4 1 10 7 10"></polyline>

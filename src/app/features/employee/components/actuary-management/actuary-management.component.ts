@@ -22,7 +22,7 @@ export class ActuaryManagementComponent implements OnInit {
   totalPages = 0;
 
   editingAgentId: number | null = null;
-  editLimitValue: number | null = null;
+  private editingLimits = new Map<number, number>();  // Map of agentId -> editLimit value
 
   confirmResetAgentId: number | null = null;
 
@@ -39,6 +39,8 @@ export class ActuaryManagementComponent implements OnInit {
 
   loadAgents(): void {
     this.isLoading = true;
+    // Reset edit mode when reloading data
+    this.cancelEditLimit();
 
     const nameParts = this.filterName.trim().split(/\s+/);
     const filters = {
@@ -86,24 +88,38 @@ export class ActuaryManagementComponent implements OnInit {
   }
 
   startEditLimit(agent: Actuary): void {
-    this.editingAgentId = agent.id;
-    this.editLimitValue = agent.limit;
+    // Close any previous edit mode first
+    this.cancelEditLimit();
+    
+    this.editingAgentId = agent.employeeId;
+    this.editingLimits.set(agent.employeeId, agent.limit);
   }
 
   cancelEditLimit(): void {
+    if (this.editingAgentId !== null) {
+      this.editingLimits.delete(this.editingAgentId);
+    }
     this.editingAgentId = null;
-    this.editLimitValue = null;
+  }
+
+  getEditLimitValue(agent: Actuary): number {
+    return this.editingLimits.get(agent.employeeId) ?? agent.limit;
+  }
+
+  setEditLimitValue(agent: Actuary, value: number): void {
+    this.editingLimits.set(agent.employeeId, value);
   }
 
   saveLimit(agent: Actuary): void {
-    if (this.editLimitValue === null || this.editLimitValue < 0) {
+    const editLimit = this.editingLimits.get(agent.employeeId);
+    if (editLimit === null || editLimit === undefined || editLimit < 0) {
       this.toastService.error('Unesite validan iznos limita.');
       return;
     }
 
-    this.actuaryService.updateAgentLimit(agent.id, this.editLimitValue).subscribe({
+    this.actuaryService.updateAgentLimit(agent.employeeId, editLimit).subscribe({
       next: () => {
-        agent.limit = this.editLimitValue!;
+        agent.limit = editLimit;
         this.toastService.success('Limit uspešno izmenjen.');
         this.cancelEditLimit();
       },
@@ -114,7 +130,7 @@ export class ActuaryManagementComponent implements OnInit {
   }
 
   promptResetLimit(agent: Actuary): void {
-    this.confirmResetAgentId = agent.id;
+    this.confirmResetAgentId = agent.employeeId;
   }
 
   cancelResetLimit(): void {
@@ -122,7 +138,7 @@ export class ActuaryManagementComponent implements OnInit {
   }
 
   confirmResetLimitAction(agent: Actuary): void {
-    this.actuaryService.resetAgentUsedLimit(agent.id).subscribe({
+    this.actuaryService.resetAgentUsedLimit(agent.employeeId).subscribe({
       next: () => {
         agent.usedLimit = 0;
         this.toastService.success('Iskorišćeni limit uspešno resetovan.');
@@ -144,6 +160,6 @@ export class ActuaryManagementComponent implements OnInit {
   }
 
   trackById(index: number, agent: Actuary): number {
-    return agent.id;
+    return agent.employeeId;
   }
 }

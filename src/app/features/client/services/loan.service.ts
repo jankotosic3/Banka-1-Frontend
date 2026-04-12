@@ -75,7 +75,7 @@ export class LoanService {
   }
 
   rejectLoanRequest(requestId: number): Observable<string> {
-    return this.http.put<string>(`${this.requestsUrl}/${requestId}/reject`, {}, { responseType: 'text' as 'json' });
+    return this.http.put<string>(`${this.requestsUrl}/${requestId}/decline`, {}, { responseType: 'text' as 'json' });
   }
 
   requestLoan(loanRequestDto: any): Observable<any> {

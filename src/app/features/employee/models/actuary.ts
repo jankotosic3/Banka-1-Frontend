@@ -1,5 +1,6 @@
 export interface Actuary {
-  id: number;
+  id?: number;
+  employeeId: number;
   ime: string;
   prezime: string;
   email: string;
