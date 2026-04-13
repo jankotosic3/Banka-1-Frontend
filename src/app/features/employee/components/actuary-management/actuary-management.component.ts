@@ -152,7 +152,7 @@ export class ActuaryManagementComponent implements OnInit {
   }
 
   getAgentForReset(): Actuary | undefined {
-    return this.agents.find(a => a.id === this.confirmResetAgentId);
+    return this.agents.find(a => a.employeeId === this.confirmResetAgentId);
   }
 
   formatCurrency(value: number): string {
