@@ -1,0 +1,173 @@
+name: CI
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  # ── TypeScript / Lint Check ───────────────────────────────────────────────
+  lint:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.3.0
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc -p tsconfig.app.json --noEmit
+
+  # ── Cypress E2E Tests ─────────────────────────────────────────────────────
+  cypress:
+    name: Cypress E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.3.0
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull backend images
+        id: pull-images
+        continue-on-error: true
+        run: |
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/employee-service:latest
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/client-service:latest
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/account-service:latest
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/transfer-service:latest
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/exchange-service:latest
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/verification-service:latest
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/transaction-service:latest
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/card-service:latest
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/credit-service:latest
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/stock-service:latest
+          docker pull ghcr.io/raf-si-2025/banka-1-backend/order-service:latest
+
+      - name: Warn if backend images unavailable
+        id: images-check
+        if: steps.pull-images.outcome == 'failure'
+        run: |
+          echo "::warning::One or more backend images could not be pulled from GHCR."
+          echo "::warning::Make sure the packages in RAF-SI-2025/banka-1-backend are set to 'internal' or 'public' visibility,"
+          echo "::warning::or add a GHCR_PAT secret with read:packages scope."
+          echo "skip=true" >> $GITHUB_OUTPUT
+
+      - name: Start backend stack
+        if: steps.images-check.outputs.skip != 'true'
+        working-directory: .github/ci
+        run: |
+          JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+          TWELVE_DATA_API_KEY="${{ secrets.TWELVE_DATA_API_KEY }}" \
+          STOCK_MARKET_DATA_API_KEY="${{ secrets.STOCK_MARKET_DATA_API_KEY }}" \
+            docker compose -f docker-compose.backend.yml -p banka1-ci up -d || {
+            echo "::error::docker compose up failed — dumping service logs:"
+            docker compose -f docker-compose.backend.yml -p banka1-ci ps
+            for svc in employee-service client-service exchange-service verification-service \
+                       account-service transfer-service transaction-service card-service \
+                       credit-service stock-service order-service; do
+              echo "=== $svc ==="
+              docker logs "banka_${svc}" 2>/dev/null || docker logs "${svc}" 2>/dev/null || true
+            done
+            exit 1
+          }
+          echo "Backend services started."
+
+      - name: Wait for API gateway to be ready
+        if: steps.images-check.outputs.skip != 'true'
+        run: |
+          echo "Waiting for API gateway (this may take up to 5 minutes for JVM warm-up)..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost/gateway-health > /dev/null 2>&1; then
+              echo "API gateway is ready after $((i * 5))s."
+              exit 0
+            fi
+            echo "Attempt $i/60 — waiting 5s..."
+            sleep 5
+          done
+          echo "::error::API gateway did not become ready in time."
+          docker compose -f .github/ci/docker-compose.backend.yml -p banka1-ci ps
+          docker compose -f .github/ci/docker-compose.backend.yml -p banka1-ci logs --tail=50
+          exit 1
+
+      - name: Build frontend
+        if: steps.images-check.outputs.skip != 'true'
+        run: npm run build
+
+      - name: Run Cypress tests
+        if: steps.images-check.outputs.skip != 'true'
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          start: npx serve -s dist/banka-1-frontend -l 4200
+          wait-on: "http://localhost:4200"
+          wait-on-timeout: 60
+          config: video=false
+
+      - name: Upload screenshots on failure
+        uses: actions/upload-artifact@v4.6.2
+        if: failure()
+        with:
+          name: cypress-screenshots-${{ github.run_id }}
+          path: cypress/screenshots
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Show backend logs on failure
+        if: failure() && steps.images-check.outputs.skip != 'true'
+        run: |
+          echo "=== API Gateway ==="
+          docker logs banka_api_gateway 2>/dev/null || true
+          echo "=== Employee Service ==="
+          docker logs banka_employee_service --tail=30 2>/dev/null || true
+          echo "=== Account Service ==="
+          docker logs banka_account_service --tail=30 2>/dev/null || true
+          echo "=== Exchange Service ==="
+          docker logs exchange-service --tail=30 2>/dev/null || true
+          echo "=== Stock Service ==="
+          docker logs banka_stock_service --tail=30 2>/dev/null || true
+
+      - name: Tear down backend
+        if: always() && steps.images-check.outputs.skip != 'true'
+        run: |
+          docker compose -f .github/ci/docker-compose.backend.yml -p banka1-ci down -v \
+            >/dev/null 2>&1 || true
+
+  # ── Docker Image Build Check ──────────────────────────────────────────────
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Build Docker image
+        run: docker build -t banka-1-frontend:ci-test .
