@@ -87,7 +87,7 @@ export class StockDetailComponent implements OnInit, OnDestroy, AfterViewInit {
     this.errorMessage = '';
 
     this.securitiesService
-      .getStockByTicker(this.ticker)
+      .getStockById(+this.ticker)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (stock) => {

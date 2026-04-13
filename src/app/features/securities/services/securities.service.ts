@@ -19,107 +19,83 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class SecuritiesService {
-  private readonly baseUrl = `${environment.apiUrl}/order/orders`;
-  private readonly clientOrdersUrl = `${environment.apiUrl}/order/orders/my-orders`;
+  private readonly stocksUrl = `${environment.apiUrl}/stock/api/listings/stocks`;
 
   constructor(private readonly http: HttpClient) {}
 
-  /**
-   * Get list of stocks for employees with filters and pagination
-   */
+  private mapStockItem(item: any): Stock {
+    return {
+      id: item.listingId,
+      ticker: item.ticker ?? '',
+      name: item.name ?? '',
+      exchange: item.exchangeMICCode ?? '',
+      price: item.price ?? 0,
+      currency: 'USD',
+      change: item.change ?? 0,
+      changePercent: item.price > 0 ? ((item.change ?? 0) / item.price) * 100 : 0,
+      volume: item.volume ?? 0,
+      maintenanceMargin: 0,
+      initialMarginCost: item.initialMarginCost ?? 0,
+      type: 'STOCK' as const,
+      lastUpdated: new Date().toISOString(),
+      high: item.price ?? 0,
+      low: item.price ?? 0,
+      open: item.price ?? 0,
+      previousClose: item.price ?? 0,
+      bid: item.price ?? 0,
+      ask: item.price ?? 0,
+    };
+  }
+
+  private mapStocksPage(response: any, filters: SecuritiesFilters, page: number, size: number, sort?: SortConfig): SecuritiesPage<Stock> {
+    let mapped: Stock[] = (response.content || []).map((item: any) => this.mapStockItem(item));
+
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      mapped = mapped.filter(s =>
+        s.ticker.toLowerCase().includes(q) ||
+        s.name.toLowerCase().includes(q)
+      );
+    }
+
+    if (sort) {
+      mapped = this.sortArray(mapped, sort);
+    }
+
+    return {
+      content: mapped,
+      totalElements: response.totalElements ?? mapped.length,
+      totalPages: response.totalPages ?? Math.ceil(mapped.length / size),
+      number: response.number ?? page,
+      size: response.size ?? size,
+    } as SecuritiesPage<Stock>;
+  }
+
   getStocks(
     filters: SecuritiesFilters = {},
     page = 0,
     size = 10,
     sort?: SortConfig
   ): Observable<SecuritiesPage<Stock>> {
-    let params = new HttpParams()
-      .set('status', "ALL")
+    const params = new HttpParams()
       .set('page', page.toString())
-      .set('size', size.toString())
-      .set('sortBy', sort?.field || 'ticker')
-      .set('sortDirection', sort?.direction || 'asc');
-
-    // Apply search filter if provided
-    if (filters.search) {
-      params = params.set('search', filters.search);
-    }
-
-    // Apply price filters
-    if (filters.priceMin !== undefined) {
-      params = params.set('priceMin', filters.priceMin.toString());
-    }
-    if (filters.priceMax !== undefined) {
-      params = params.set('priceMax', filters.priceMax.toString());
-    }
-
-    // Apply volume filters
-    if (filters.volumeMin !== undefined) {
-      params = params.set('volumeMin', filters.volumeMin.toString());
-    }
-    if (filters.volumeMax !== undefined) {
-      params = params.set('volumeMax', filters.volumeMax.toString());
-    }
-
-    // Apply bid/ask filters
-    if (filters.bidMin !== undefined) {
-      params = params.set('bidMin', filters.bidMin.toString());
-    }
-    if (filters.bidMax !== undefined) {
-      params = params.set('bidMax', filters.bidMax.toString());
-    }
-    if (filters.askMin !== undefined) {
-      params = params.set('askMin', filters.askMin.toString());
-    }
-    if (filters.askMax !== undefined) {
-      params = params.set('askMax', filters.askMax.toString());
-    }
-
-    return this.http.get<SecuritiesPage<Stock>>(`${this.baseUrl}`, { params });
+      .set('size', size.toString());
+    return this.http.get<any>(`${this.stocksUrl}`, { params }).pipe(
+      map(response => this.mapStocksPage(response, filters, page, size, sort))
+    );
   }
 
-  /**
-   * Get list of stocks for clients (returns List, not paginated)
-   */
   getClientStocks(
     filters: SecuritiesFilters = {},
     page = 0,
     size = 10,
     sort?: SortConfig
   ): Observable<SecuritiesPage<Stock>> {
-    // Backend returns List<OrderResponse>, not paginated
-    // We map it to SecuritiesPage format for consistent component behavior
-    return this.http.get<Stock[]>(`${this.clientOrdersUrl}`).pipe(
-      map(orders => {
-        // Apply client-side pagination since backend doesn't support it
-        let filtered = orders || [];
-        
-        // Apply sorting if specified
-        if (sort) {
-          filtered = this.sortArray(filtered, sort);
-        }
-        
-        // Apply search filter if provided
-        if (filters.search) {
-          filtered = filtered.filter(order =>
-            (order.ticker?.toLowerCase().includes(filters.search!.toLowerCase())) ||
-            (order.name?.toLowerCase().includes(filters.search!.toLowerCase()))
-          );
-        }
-        
-        // Client-side pagination
-        const startIdx = page * size;
-        const endIdx = startIdx + size;
-        const paginatedContent = filtered.slice(startIdx, endIdx);
-        
-        return {
-          content: paginatedContent,
-          totalElements: filtered.length,
-          totalPages: Math.ceil(filtered.length / size),
-          number: page,
-          size: size,
-        } as SecuritiesPage<Stock>;
-      })
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<any>(`${this.stocksUrl}`, { params }).pipe(
+      map(response => this.mapStocksPage(response, filters, page, size, sort))
     );
   }
 
@@ -302,16 +278,32 @@ export class SecuritiesService {
     );
   }
 
-  /**
-   * Get stock by ticker
-   */
-  getStockByTicker(ticker: string): Observable<Stock> {
-    return this.getStocks({}, 0, 100).pipe(
-      map(page => {
-        const stock = page.content.find(s => s.ticker === ticker);
-        if (!stock) throw new Error(`Stock ${ticker} not found`);
-        return stock;
-      })
+  getStockById(id: number): Observable<Stock> {
+    const params = new HttpParams().set('period', 'DAY');
+    return this.http.get<any>(`${environment.apiUrl}/stock/api/listings/${id}`, { params }).pipe(
+      map((item: any) => ({
+        id: item.listingId,
+        ticker: item.ticker ?? '',
+        name: item.name ?? '',
+        exchange: item.exchangeMICCode ?? '',
+        price: item.price ?? 0,
+        currency: 'USD',
+        change: item.change ?? 0,
+        changePercent: item.changePercent ?? 0,
+        volume: item.volume ?? 0,
+        maintenanceMargin: 0,
+        initialMarginCost: item.initialMarginCost ?? 0,
+        type: 'STOCK' as const,
+        lastUpdated: item.lastRefresh ?? new Date().toISOString(),
+        high: item.price ?? 0,
+        low: item.price ?? 0,
+        open: item.price ?? 0,
+        previousClose: item.price ?? 0,
+        bid: item.bid ?? 0,
+        ask: item.ask ?? 0,
+        dividend: item.stockDetails?.dividendYield ?? undefined,
+        dividendYield: item.stockDetails?.dividendYield ?? undefined,
+      } as Stock))
     );
   }
 

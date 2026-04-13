@@ -34,6 +34,6 @@ export class ActuaryService {
   }
 
   resetAgentUsedLimit(agentId: number): Observable<Actuary> {
-    return this.http.post<Actuary>(`${this.apiUrl}/agents/${agentId}/reset-used-limit`, {});
+    return this.http.put<Actuary>(`${this.apiUrl}/agents/${agentId}/reset-limit`, {});
   }
 }
