@@ -217,6 +217,8 @@ export class SecuritiesService {
       name: item.name ?? '',
       exchange: item.exchangeMICCode ?? '',
       price: item.price ?? 0,
+      // F7 TODO: After backend adds currency to ListingSummaryResponse:
+      // currency: item.currency,
       currency: 'USD',
       change: item.change ?? 0,
       changePercent: item.price > 0 ? ((item.change ?? 0) / item.price) * 100 : 0,
@@ -229,6 +231,9 @@ export class SecuritiesService {
       low: item.price ?? 0,
       open: item.price ?? 0,
       previousClose: item.price ?? 0,
+      // F7 TODO: After backend adds bid/ask to ListingSummaryResponse:
+      // bid: item.bid,
+      // ask: item.ask,
       bid: item.price ?? 0,
       ask: item.price ?? 0,
     };
@@ -393,6 +398,8 @@ export class SecuritiesService {
             name: item.name,
             exchange: item.exchangeMICCode,
             price: price,
+            // F7 TODO: After backend adds currency to ListingSummaryResponse:
+            // currency: item.currency ?? 'USD',
             currency: 'USD',
             change: change,
             changePercent: changePercent,
@@ -408,6 +415,9 @@ export class SecuritiesService {
             low: price * 0.98,
             open: price,
             previousClose: price - change,
+            // F7 TODO: After backend adds bid/ask to ListingSummaryResponse:
+            // bid: item.bid ?? price,
+            // ask: item.ask ?? price,
             bid: price > 0 ? price - 0.01 : 0.99,
             ask: price > 0 ? price + 0.01 : 1.01,
           } as Future;
@@ -478,6 +488,8 @@ export class SecuritiesService {
             name: item.name,
             exchange: item.exchangeMICCode,
             price: price,
+            // F7 TODO: After backend adds currency to ListingSummaryResponse:
+            // currency: item.currency ?? 'USD',
             currency: 'USD',
             change: change,
             changePercent: changePercent,
@@ -488,6 +500,10 @@ export class SecuritiesService {
             lastUpdated: new Date().toISOString(),
             baseCurrency: item.ticker.split('/')[0] || 'USD',
             quoteCurrency: item.ticker.split('/')[1] || 'USD',
+            // F7 TODO: After backend adds bid/ask to ListingSummaryResponse:
+            // bid: item.bid ?? price,
+            // ask: item.ask ?? price,
+            // spread: (item.ask ?? price) - (item.bid ?? price),
             bid: price > 0 ? price - 0.0001 : 0.9999,
             ask: price > 0 ? price + 0.0001 : 1.0001,
             spread: 0.0002,
