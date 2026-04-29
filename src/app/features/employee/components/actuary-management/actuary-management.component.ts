@@ -162,4 +162,20 @@ export class ActuaryManagementComponent implements OnInit {
   trackById(index: number, agent: Actuary): number {
     return agent.employeeId;
   }
+
+  toggleNeedApproval(agent: Actuary): void {
+    // Invertujemo vrednost
+    const newValue = !agent.needApproval;
+
+    this.actuaryService.updateNeedApproval(agent.employeeId, newValue).subscribe({
+      next: () => {
+        agent.needApproval = newValue; // Ažuriramo UI tek nakon uspeha
+        this.toastService.success(`Status odobrenja za ${agent.ime} je ažuriran.`);
+      },
+      error: (err) => {
+        console.error('Greška pri ažuriranju odobrenja:', err);
+        this.toastService.error(err.error?.message || 'Nije uspelo ažuriranje statusa odobrenja.');
+      }
+    });
+  }
 }
