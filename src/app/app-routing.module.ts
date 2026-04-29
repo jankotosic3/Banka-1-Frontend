@@ -30,6 +30,11 @@ import { LoanRequestManagementComponent } from './features/employee/components/l
 import { LoanManagementComponent } from './features/employee/components/loan-management/loan-management.component';
 import { LoanRequestComponent } from './features/client/components/loan-request/loan-request.component';
 import { TaxTrackingComponent } from './features/employee/components/tax-tracking/tax-tracking.component';
+import { CreateOrderComponent } from './features/orders/components/create-order/create-order.component';
+import { OrdersOverviewComponent } from './features/employee/components/orders-overview/orders-overview.component';
+import { PortfolioComponent } from './features/client/components/portfolio/portfolio.component';
+import { portfolioAccessGuard } from './core/guards/portfolio-access.guard';
+
 const routes: Routes = [
   {
     path: 'home',
@@ -100,13 +105,11 @@ const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { permission: 'FUND_AGENT_MANAGE' },
   },
-
   {
     path: 'transfers/different',
     component: TransferDiffComponent,
     canActivate: [authGuard],
   },
-
   {
     path: 'transfers/same',
     component: TransferSameComponent,
@@ -121,6 +124,12 @@ const routes: Routes = [
     path: 'exchange',
     component: ExchangeRateComponent,
     canActivate: [authGuard],
+  },
+  {
+    path: 'orders-overview',
+    component: OrdersOverviewComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { permission: 'TRADE_UNLIMITED' },
   },
   {
     path: '403',
@@ -181,6 +190,11 @@ const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'portfolio',
+    component: PortfolioComponent,
+    canActivate: [authGuard, portfolioAccessGuard],
+  },
+  {
     path: 'securities/stock/:ticker',
     component: StockDetailComponent,
     canActivate: [authGuard],
@@ -198,9 +212,14 @@ const routes: Routes = [
     data: { securityType: 'forex' },
   },
   {
+    path: 'orders/create/:direction/:listingId',
+    component: CreateOrderComponent,
+    canActivate: [authGuard]
+  },
+  {
     path: '**',
     component: NotFoundComponent,
-  },
+  }
 ];
 
 @NgModule({

@@ -20,6 +20,7 @@ export class NavbarComponent implements OnInit {
   navLinks: NavLink[] = [];
   userRole = '';
   userName = '';
+  private readonly portfolioLink: NavLink = { label: 'Moj portfolio', route: '/portfolio', icon: 'work' };
 
   private readonly clientLinks: NavLink[] = [
     { label: 'Početna',    route: '/home',                icon: 'home' },
@@ -31,6 +32,7 @@ export class NavbarComponent implements OnInit {
     { label: 'Menjačnica', route: '/exchange',            icon: 'currency_exchange' },
     { label: 'Primaoci plaćanja', route: '/payments/recipients', icon: 'people' },
     { label: 'Hartije',    route: '/securities',          icon: 'trending_up' },
+    this.portfolioLink,
     { label: 'Krediti',    route: '/loans',               icon: 'credit_card' },
     { label: 'Berza',      route: '/stock-exchange',      icon: 'show_chart' },
   ];
@@ -64,13 +66,14 @@ export class NavbarComponent implements OnInit {
       const permissions: string[] = (user as any)?.permissions ?? [];
       this.navLinks = [
         ...this.employeeLinks,
+        ...(this.authService.canAccessPortfolio() ? [this.portfolioLink] : []),
         ...(permissions.includes('FUND_AGENT_MANAGE') ? this.supervisorLinks : [])
       ];
     }
   }
 
   isClient(): boolean {
-    return this.userRole.toUpperCase().startsWith('CLIENT');
+    return this.authService.isClient();
   }
 
   logout(): void {

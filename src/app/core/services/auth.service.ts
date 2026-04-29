@@ -100,11 +100,70 @@ export class AuthService {
   }
 
   /**
+   * Dekodira JWT role iz tokena.
+   * UPOZORENJE: Ovo se koristi samo za UI prikaz i frontend UX odluke.
+   * Backend mora da validira potpis tokena i role za sve autorizacione odluke.
+   */
+  getJwtRoles(): string[] {
+    const token = this.getToken();
+
+    if (!token) {
+      return [];
+    }
+
+    try {
+      const payloadPart = token.split('.')[1];
+
+      if (!payloadPart) {
+        return [];
+      }
+
+      const normalizedPayload = payloadPart
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+      const decodedPayload = atob(normalizedPayload);
+      const payload = JSON.parse(decodedPayload) as { roles?: string | string[] };
+
+      if (!payload.roles) {
+        return [];
+      }
+
+      const roles = Array.isArray(payload.roles) ? payload.roles : [payload.roles];
+      return roles
+        .map((role) => String(role).toUpperCase())
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Da li je ulogovani korisnik klijent.
    */
   isClient(): boolean {
+    const jwtRoles = this.getJwtRoles();
+
+    if (jwtRoles.length > 0) {
+      return jwtRoles.some((role) => role.startsWith('CLIENT'));
+    }
+
     const role = this.getUserRole().toUpperCase();
     return role.startsWith('CLIENT');
+  }
+
+  isActuary(): boolean {
+    const jwtRoles = this.getJwtRoles();
+
+    if (jwtRoles.length > 0) {
+      return jwtRoles.includes('AGENT') || jwtRoles.includes('SUPERVISOR');
+    }
+
+    const role = this.getUserRole().toUpperCase();
+    return role === 'AGENT' || role === 'SUPERVISOR';
+  }
+
+  canAccessPortfolio(): boolean {
+    return this.isClient() || this.isActuary();
   }
 
   /**
