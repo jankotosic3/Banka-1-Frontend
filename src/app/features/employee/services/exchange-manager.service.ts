@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { ExchangeService } from './exchange.service';
-import { environment } from 'src/environments/environment.development';
+import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http'; 
 
 export interface ExchangeInfo {
@@ -185,7 +185,7 @@ constructor(
   }
 
   toggleExchangeActive(id: number): Observable<void> {
-    return this.http.put<void>(`${environment.apiUrl}/stock/api/stock-exchanges/${id}/toggle-active`, {});
+    return this.http.put<void>(`${environment.apiUrl}/api/stock-exchanges/${id}/toggle-active`, {});
   }
   /**
    * Vraća trenutni status mock podataka
