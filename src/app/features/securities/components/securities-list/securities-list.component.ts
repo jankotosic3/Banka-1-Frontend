@@ -116,12 +116,7 @@ export class SecuritiesListComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.errorMessage = '';
 
-    // Automatski dodaj dostupne berze kao filter da se ne prikazuju hartije sa nepostojeći berzama
-    const availableMICCodes = this.exchangeManager.getAvailableExchangeCodes().join(',');
-    const filtersWithExchange = {
-      ...this.filters,
-      exchange: availableMICCodes
-    };
+    const filtersWithExchange = { ...this.filters };
 
     let request$: Observable<SecuritiesPage<Security>>;
     switch (this.activeTab) {

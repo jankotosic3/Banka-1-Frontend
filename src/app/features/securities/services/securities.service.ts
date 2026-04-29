@@ -517,6 +517,40 @@ export class SecuritiesService {
     );
   }
 
+
+getSecurityById(id: number): Observable<Security> {
+  return this.http
+    .get<any>(`${environment.apiUrl}/stock/api/listings/${id}`, {
+      params: { period: 'DAY' },
+    })
+    .pipe(map(item => this.mapListingDetailsToSecurity(item)));
+}
+
+private mapListingDetailsToSecurity(item: any): Security {
+  return {
+    id: item.listingId,
+    ticker: item.ticker,
+    name: item.name,
+    exchange: item.exchangeMICCode,
+    price: Number(item.price ?? 0),
+    currency: item.currency,
+    change: Number(item.change ?? 0),
+    changePercent: Number(item.changePercent ?? 0),
+    volume: Number(item.volume ?? 0),
+    maintenanceMargin: Number(item.maintenanceMargin ?? 0),
+    initialMarginCost: Number(item.initialMarginCost ?? 0),
+    type: item.listingType === 'FUTURES' ? 'FUTURE' : item.listingType,
+    lastUpdated: item.lastRefresh,
+    bid: Number(item.bid ?? item.price ?? 0),
+    ask: Number(item.ask ?? item.price ?? 0),
+    contractSize: Number(item.contractSize ?? 1),
+  } as any;
+}
+
+
+
+
+
   getStockById(id: number, period: string = 'DAY'): Observable<Stock> {
     const params = new HttpParams().set('period', period.toUpperCase());
     return this.http.get<any>(`${environment.apiUrl}/stock/api/listings/${id}`, { params }).pipe(
