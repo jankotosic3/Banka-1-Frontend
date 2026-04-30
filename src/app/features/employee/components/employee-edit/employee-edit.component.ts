@@ -23,7 +23,8 @@ export class EmployeeEditComponent implements OnChanges {
       pozicija: [''],
       departman: [''],
       role: ['BASIC'],
-      aktivan: [true]
+      aktivan: [true],
+      margin: [false]
     });
   }
 
@@ -37,7 +38,8 @@ export class EmployeeEditComponent implements OnChanges {
         pozicija: this.employee.pozicija || '',
         departman: this.employee.departman || '',
         role: this.employee.role || 'BASIC',
-        aktivan: this.employee.aktivan !== false
+        aktivan: this.employee.aktivan !== false,
+        margin: this.employee.margin === true
       });
     }
   }

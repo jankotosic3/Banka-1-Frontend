@@ -12,4 +12,5 @@ export interface Employee {
   aktivan?: boolean;
   permisije?: string[];
   role: string;
+  margin?: boolean;
 }
