@@ -17,8 +17,7 @@ export interface CreateOrderRequest {
   stopValue?: number | null;
   allOrNone: boolean;
   margin: boolean;
-  accountId?: string | null;
-  bankAccountId?: string | null;
+  accountId: number;
 }
 
 export interface OrderResponse {

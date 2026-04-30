@@ -252,16 +252,7 @@ export class SecuritiesListComponent implements OnInit, OnDestroy {
 
   /**
    * F1/F8: Buy security button click handler
-   * TODO: When F1 (OrderModal) is implemented, replace console.log with modal open:
-   *
-   * this.dialog.open(OrderModalComponent, {
-   *   data: {
-   *     mode: 'BUY',
-   *     securityType: this.activeTab.toUpperCase(), // 'STOCKS' | 'FUTURES' | 'FOREX'
-   *     security: security,
-   *     afterHoursWarning: status.isAfterHours
-   *   }
-   * });
+   * Opens the order creation page with the selected security and BUY direction.
    */
   onBuy(security: Security, event: Event): void {
     event.stopPropagation();
@@ -274,13 +265,13 @@ export class SecuritiesListComponent implements OnInit, OnDestroy {
           if (status.isAfterHours && status.message) {
             this.toastService.warning(status.message);
           }
-          // TODO: Open OrderModalComponent here (F1)
-          console.log('Buy clicked:', security.ticker, 'After-hours:', status.isAfterHours);
+          // Navigate to order creation page
+          this.router.navigate(['/orders/create', 'BUY', security.id]);
         },
         error: (err) => {
           console.error('Error checking exchange status:', err);
           // Proceed anyway if status check fails
-          console.log('Buy clicked:', security.ticker);
+          this.router.navigate(['/orders/create', 'BUY', security.id]);
         }
       });
   }

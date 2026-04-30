@@ -22,7 +22,7 @@
     </div>
 
     <div class="bg-card rounded-lg shadow overflow-hidden">
-      <table class="w-full" *ngIf="exchanges.length > 0 && !loadError">
+      <table class="w-full" *ngIf="filteredExchanges.length > 0 && !loadError">
         <thead class="bg-muted border-b border-border">
           <tr>
             <th class="px-6 py-3 text-left text-sm font-semibold text-foreground">Naziv Berze</th>
@@ -36,7 +36,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-border">
-          <tr *ngFor="let exchange of exchanges" class="hover:bg-muted/50 transition-colors">
+          <tr *ngFor="let exchange of filteredExchanges" class="hover:bg-muted/50 transition-colors">
             <td class="px-6 py-3 text-sm text-foreground font-medium">{{ exchange.exchangeName }}</td>
             <td class="px-6 py-3 text-sm text-muted-foreground">{{ exchange.exchangeAcronym }}</td>
             <td class="px-6 py-3 text-sm text-muted-foreground">{{ exchange.exchangeMICCode }}</td>
@@ -44,16 +44,9 @@
             <td class="px-6 py-3 text-sm text-muted-foreground">{{ exchange.currency }}</td>
             <td class="px-6 py-3 text-sm text-muted-foreground">{{ exchange.timeZone }}</td>
             <td class="px-6 py-3 text-sm">
-              <button 
-                (click)="onToggleActive(exchange)" 
-                class="relative inline-flex items-center h-6 w-11 rounded-full transition-colors focus:outline-none"
-                [ngClass]="exchange.isActive ? 'bg-green-500' : 'bg-gray-300'">
-                
-                <span 
-                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-                  [ngClass]="exchange.isActive ? 'translate-x-6' : 'translate-x-1'">
-                </span>
-              </button>
+              <span [ngClass]="exchangeManager.isExchangeOpen(exchange) ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'">
+                {{ exchangeManager.isExchangeOpen(exchange) ? 'Otvorena' : 'Zatvorena' }}
+              </span>
             </td>
             <td class="px-6 py-3 text-sm text-muted-foreground">
               {{ exchange.openTime }} - {{ exchange.closeTime }}
@@ -63,8 +56,8 @@
       </table>
 
       <!-- Poruka ako nema podataka ili je došlo do greške -->
-      <div class="px-6 py-12 text-center" *ngIf="exchanges.length === 0 || loadError">
-        <p class="text-lg text-muted-foreground">{{ loadError ? 'Greška pri učitavanju podataka' : 'Nema podataka' }}</p>
+      <div class="px-6 py-12 text-center" *ngIf="filteredExchanges.length === 0 || loadError">
+        <p class="text-lg text-muted-foreground">{{ loadError ? 'Greška pri učitavanju podataka' : (showOpenOnly ? 'Nema otvorenih berzi' : 'Nema podataka') }}</p>
       </div>
     </div>
   </div>

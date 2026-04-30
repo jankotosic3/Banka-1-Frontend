@@ -1,20 +1,25 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { tap, shareReplay } from 'rxjs/operators';
 import { ExchangeService } from './exchange.service';
 import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http'; 
 
 export interface ExchangeInfo {
-  id?: number;
-  exchangeName?: string;
-  exchangeAcronym?: string;
+  id: number;
+  exchangeName: string;
+  exchangeAcronym: string;
   exchangeMICCode: string;
-  polity?: string;
-  currency?: string;
-  timeZone?: string;
-  isActive?: boolean;
-  openTime?: string;
-  closeTime?: string;
+  polity: string;
+  currency: string;
+  timeZone: string;
+  openTime: string;
+  closeTime: string;
+  preMarketOpenTime: string | null;
+  preMarketCloseTime: string | null;
+  postMarketOpenTime: string | null;
+  postMarketCloseTime: string | null;
+  isActive: boolean;
 }
 
 @Injectable({
@@ -31,108 +36,32 @@ export class ExchangeManagerService {
   private loadErrorSubject = new BehaviorSubject<boolean>(false);
   public loadError$ = this.loadErrorSubject.asObservable();
 
-  private readonly mockExchanges: ExchangeInfo[] = [
-    {
-      id: 1,
-      exchangeName: 'New York Stock Exchange',
-      exchangeAcronym: 'NYSE',
-      exchangeMICCode: 'XNYS',
-      polity: 'United States',
-      currency: 'USD',
-      timeZone: 'EST',
-      isActive: false,
-      openTime: '09:30',
-      closeTime: '16:00'
-    },
-    {
-      id: 2,
-      exchangeName: 'NASDAQ',
-      exchangeAcronym: 'NASDAQ',
-      exchangeMICCode: 'XNGS',
-      polity: 'United States',
-      currency: 'USD',
-      timeZone: 'EST',
-      isActive: false,
-      openTime: '09:30',
-      closeTime: '16:00'
-    },
-    {
-      id: 3,
-      exchangeName: 'London Stock Exchange',
-      exchangeAcronym: 'LSE',
-      exchangeMICCode: 'XLON',
-      polity: 'United Kingdom',
-      currency: 'GBP',
-      timeZone: 'GMT',
-      isActive: true,
-      openTime: '08:00',
-      closeTime: '16:30'
-    },
-    {
-      id: 4,
-      exchangeName: 'Frankfurt Stock Exchange',
-      exchangeAcronym: 'FSE',
-      exchangeMICCode: 'XETRA',
-      polity: 'Germany',
-      currency: 'EUR',
-      timeZone: 'CET',
-      isActive: true,
-      openTime: '08:00',
-      closeTime: '22:00'
-    },
-    {
-      id: 5,
-      exchangeName: 'Japan Exchange Group',
-      exchangeAcronym: 'JPX',
-      exchangeMICCode: 'XTKS',
-      polity: 'Japan',
-      currency: 'JPY',
-      timeZone: 'JST',
-      isActive: false,
-      openTime: '09:00',
-      closeTime: '15:00'
-    },
-    {
-      id: 6,
-      exchangeName: 'Hong Kong Stock Exchange',
-      exchangeAcronym: 'HKEX',
-      exchangeMICCode: 'XHKG',
-      polity: 'Hong Kong',
-      currency: 'HKD',
-      timeZone: 'HKT',
-      isActive: true,
-      openTime: '09:30',
-      closeTime: '16:00'
-    }
-  ];
-
-constructor(
-  private http: HttpClient, 
-  private exchangeService: ExchangeService
-) {
-  this.loadExchanges(); 
-}
+  constructor(
+    private http: HttpClient, 
+    private exchangeService: ExchangeService
+  ) {
+    this.loadExchanges(); 
+  }
 
   /**
-   * Učitava berze sa API-ja ili mock podataka
+   * Učitava berze sa API-ja
    */
   loadExchanges(): void {
-    if (this.useMockDataSubject.value) {
-      this.availableExchangesSubject.next(this.mockExchanges);
-      this.loadErrorSubject.next(false);
-    } else {
-      this.exchangeService.getExchanges().subscribe({
-        next: (exchanges) => {
-          this.availableExchangesSubject.next(exchanges);
-          this.loadErrorSubject.next(false);
-        },
-        error: () => {
-          // Prikaži grešku umjesto fallback-a na mock
-          this.availableExchangesSubject.next([]);
-          this.loadErrorSubject.next(true);
-        }
-      });
-    }
+    console.log('loadExchanges() pozvan');
+    this.exchangeService.getExchanges().pipe(
+      tap(exchanges => {
+        console.log('Berze učitane:', exchanges);
+        this.availableExchangesSubject.next(exchanges);
+        this.loadErrorSubject.next(false);
+      }),
+      shareReplay(1)
+    ).subscribe({
+      error: (err) => {
+        console.error('Greška pri učitavanju berzi:', err);
+        this.availableExchangesSubject.next([]);
+        this.loadErrorSubject.next(true);
+      }
+    });
   }
 
   /**
@@ -185,8 +114,44 @@ constructor(
   }
 
   toggleExchangeActive(id: number): Observable<void> {
-    return this.http.put<void>(`${environment.apiUrl}/api/stock-exchanges/${id}/toggle-active`, {});
+    return this.http.put<void>(`${environment.apiUrl}/stock/api/stock-exchanges/${id}/toggle-active`, {});
   }
+
+  /**
+   * Proverava da li je berza otvorena na osnovu trenutnog vremena u njenoj vremenskoj zoni
+   */
+  isExchangeOpen(exchange: ExchangeInfo): boolean {
+    try {
+      // Dobij trenutno vreme u vremenskoj zoni berze
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: exchange.timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      
+      const parts = formatter.formatToParts(now);
+      const hour = parts.find(p => p.type === 'hour')?.value || '00';
+      const minute = parts.find(p => p.type === 'minute')?.value || '00';
+      const second = parts.find(p => p.type === 'second')?.value || '00';
+      
+      const currentTimeStr = `${hour}:${minute}:${second}`;
+      
+      // Pretvori u vremenske vrednosti za poređenje (HH:MM:SS)
+      const currentTime = currentTimeStr;
+      const openTime = exchange.openTime || '00:00:00';
+      const closeTime = exchange.closeTime || '23:59:59';
+      
+      // Poredi vremenske stringove (rade jer su u formatu HH:MM:SS)
+      return currentTime >= openTime && currentTime < closeTime;
+    } catch (error) {
+      console.error('Greška pri proveravanju vremena berze:', error);
+      return false;
+    }
+  }
+
   /**
    * Vraća trenutni status mock podataka
    */

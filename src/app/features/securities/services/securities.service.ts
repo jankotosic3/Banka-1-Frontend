@@ -552,7 +552,16 @@ private mapListingDetailsToSecurity(item: any): Security {
 
 
   getStockById(id: number, period: string = 'DAY'): Observable<Stock> {
-    const params = new HttpParams().set('period', period.toUpperCase());
+    const periodMap: Record<string, string> = {
+      'day': 'DAY',
+      'week': 'WEEK',
+      'month': 'MONTH',
+      'year': 'YEAR',
+      '5year': 'FIVE_YEARS',
+      'all': 'ALL'
+    };
+    const apiPeriod = periodMap[period.toLowerCase()] || period.toUpperCase();
+    const params = new HttpParams().set('period', apiPeriod);
     return this.http.get<any>(`${environment.apiUrl}/stock/api/listings/${id}`, { params }).pipe(
       map((item: any) => ({
         id: item.listingId,

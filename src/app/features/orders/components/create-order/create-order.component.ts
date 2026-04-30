@@ -31,7 +31,7 @@ export class CreateOrderComponent implements OnInit {
   stopValue: number | null = null;
   allOrNone = false;
   margin = false;
-  selectedAccountId: string | null = null;
+  selectedAccountId: number | null = null;
 
   isLoading = true;
   isSubmitting = false;
@@ -78,7 +78,7 @@ export class CreateOrderComponent implements OnInit {
       this.accountService.getMyAccounts().subscribe({
         next: accounts => {
           this.accounts = accounts.filter(a => a.status === 'ACTIVE');
-          this.selectedAccountId = this.accounts.length > 0 ? this.accounts[0].accountNumber : null;
+          this.selectedAccountId = this.accounts.length > 0 ? this.accounts[0].id : null;
           this.isLoading = false;
         },
         error: () => {
@@ -92,7 +92,7 @@ export class CreateOrderComponent implements OnInit {
     this.accountService.getBankAccountByCurrency(this.security.currency).subscribe({
       next: account => {
         this.accounts = Array.isArray(account) ? account : (account ? [account] : []);
-        this.selectedAccountId = this.accounts.length > 0 ? this.accounts[0].accountNumber : null;
+        this.selectedAccountId = this.accounts.length > 0 ? this.accounts[0].id : null;
         this.isLoading = false;
       },
       error: () => {
@@ -148,7 +148,7 @@ export class CreateOrderComponent implements OnInit {
   }
 
   get selectedAccount(): Account | null {
-    return this.accounts.find(a => a.accountNumber === this.selectedAccountId) ?? null;
+    return this.accounts.find(a => a.id === this.selectedAccountId) ?? null;
   }
 
   get canSubmit(): boolean {
@@ -170,8 +170,7 @@ export class CreateOrderComponent implements OnInit {
       stopValue: this.stopValue || null,
       allOrNone: this.allOrNone,
       margin: this.margin,
-      accountId: this.authService.isClient() ? this.selectedAccountId : null,
-      bankAccountId: this.authService.isClient() ? null : this.selectedAccountId,
+      accountId: this.selectedAccountId!,
     };
 
     const request$ = this.direction === 'BUY'

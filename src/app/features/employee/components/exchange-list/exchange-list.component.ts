@@ -1,11 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { NavbarComponent } from '@/shared/components/navbar/navbar.component';
-import { ExchangeManagerService } from '../../services/exchange-manager.service';
-import { ToastService } from '@/shared/services/toast.service'; 
+import { ExchangeManagerService } from '../../services/exchange-manager.service'; 
 
 @Component({
   selector: 'app-exchange-list',
@@ -22,16 +21,19 @@ export class ExchangeListComponent implements OnInit, OnDestroy {
   loadError = false;
 
   constructor(
-    private exchangeManager: ExchangeManagerService,
-    private toastService: ToastService         
+    public exchangeManager: ExchangeManagerService
   ) {}
 
   ngOnInit(): void {
+    // Eksplicitno učitaj berze kada se komponenta inicijalizuje
+    this.exchangeManager.loadExchanges();
+
     // Pretplati se na promene dostupnih berzi (uključujući promene između mock i live podataka)
     this.exchangeManager.availableExchanges$
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
+          console.log('Exchange list komponenta primila podatke:', data);
           this.exchanges = data;
         },
         error: (err: any) => {
@@ -45,28 +47,28 @@ export class ExchangeListComponent implements OnInit, OnDestroy {
       .subscribe(hasError => {
         this.loadError = hasError;
       });
+
+    // Osvežavaj status berzi svakih 60 sekundi jer se vremenske zone menjaju
+    interval(60000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        // Samo triggeruj change detection ponavljanjem niza
+        this.exchanges = [...this.exchanges];
+      });
+  }
+
+  /**
+   * Vraća filtrirane berze na osnovu showOpenOnly
+   */
+  get filteredExchanges(): any[] {
+    if (!this.showOpenOnly) {
+      return this.exchanges;
+    }
+    return this.exchanges.filter(ex => this.exchangeManager.isExchangeOpen(ex));
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  onToggleActive(exchange: any): void {
-    const previousStatus = exchange.isActive;
-    exchange.isActive = !exchange.isActive;
-
-    // Koristimo exchangeManager (jer si ga tako nazvao u konstruktoru), a ne exchangeService
-    this.exchangeManager.toggleExchangeActive(exchange.id).subscribe({
-      next: () => {
-        this.toastService.success(`Status za ${exchange.exchangeName} uspešno promenjen.`);
-      },
-      error: (err: any) => {
-        console.error('Greška:', err);
-        exchange.isActive = previousStatus;
-        this.toastService.error('Greška pri komunikaciji sa serverom.');
-      }
-    });
-  }
-
 }

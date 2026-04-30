@@ -19,10 +19,10 @@ export class OrderService {
   }
 
   confirmOrder(orderId: number): Observable<OrderResponse> {
-    return this.http.post<OrderResponse>(`${this.baseUrl}/${orderId}/confirm`, {});
+    return this.http.post<OrderResponse>(`${this.baseUrl}/${orderId}/confirm`, null);
   }
 
   cancelOrder(orderId: number): Observable<OrderResponse> {
-    return this.http.post<OrderResponse>(`${this.baseUrl}/${orderId}/cancel`, {});
+    return this.http.post<OrderResponse>(`${this.baseUrl}/${orderId}/cancel`, null);
   }
 }
