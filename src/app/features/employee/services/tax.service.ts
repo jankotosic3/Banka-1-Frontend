@@ -16,7 +16,7 @@ export class TaxService {
   }
 
     triggerTaxCalculation(): Observable<void> {
-    const runUrl = `${environment.apiUrl}/order/internal/tax/capital-gains/run`;
-    return this.http.post<void>(runUrl, {});
+    const runUrl = `${environment.apiUrl}/order/tax/collect`;
+    return this.http.post<void>(runUrl, null);
   }
 }

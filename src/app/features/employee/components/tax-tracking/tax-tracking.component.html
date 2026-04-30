@@ -56,7 +56,7 @@
                 {{ user.type === 'CLIENT' ? 'Klijent' : 'Aktuar' }}
               </span>
             </td>
-            <td class="text-gray">{{ user.baseAmount | number:'1.2-2' }} RSD</td>
+            <td class="text-gray">{{ (user.taxDebt / 0.15) | number:'1.2-2' }} RSD</td>
             <td class="text-danger font-semibold">{{ user.taxDebt | number:'1.2-2' }} RSD</td>
             <td class="text-gray">RSD (Konvertovano)</td>
           </tr>

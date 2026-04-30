@@ -1,8 +1,14 @@
 export interface TaxUser {
-  id: number;
+  firstName: string;
+  lastName: string;
+  userType: 'CLIENT' | 'ACTUARY';
+  taxDebtRsd: number;
+}
+
+export interface TaxUserDisplay {
   firstName: string;
   lastName: string;
   type: 'CLIENT' | 'ACTUARY';
-  baseAmount: number; 
-  taxDebt: number;  
+  baseAmount: number;
+  taxDebt: number;
 }
