@@ -162,8 +162,16 @@ export class AuthService {
     return role === 'AGENT' || role === 'SUPERVISOR';
   }
 
+  isAdmin(): boolean {
+    const jwtRoles = this.getJwtRoles();
+    if (jwtRoles.length > 0) {
+      return jwtRoles.includes('ADMIN');
+    }
+    return this.getUserRole().toUpperCase() === 'ADMIN';
+  }
+
   canAccessPortfolio(): boolean {
-    return this.isClient() || this.isActuary();
+    return this.isClient() || this.isActuary() || this.isAdmin();
   }
 
   /**
