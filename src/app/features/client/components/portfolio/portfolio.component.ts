@@ -1,8 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { NavigationEnd, Router } from '@angular/router';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 import { NavbarComponent } from '../../../../shared/components/navbar/navbar.component';
 import { PortfolioService } from '../../services/portfolio.service';
 import {
@@ -37,11 +38,23 @@ export class PortfolioComponent implements OnInit, OnDestroy {
     private readonly portfolioService: PortfolioService,
     private readonly authService: AuthService,
     private readonly toastService: ToastService,
+    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
     this.isActuary = this.authService.isActuary();
     this.loadPortfolio();
+
+    // The portfolio page is the natural landing spot after a buy/sell flow,
+    // so re-fetch holdings whenever the user navigates back to it. Without
+    // this, freshly settled positions only appear after a manual refresh.
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        filter((event) => event.urlAfterRedirects.startsWith('/portfolio')),
+        takeUntil(this.destroy$),
+      )
+      .subscribe(() => this.loadPortfolio());
   }
 
   ngOnDestroy(): void {

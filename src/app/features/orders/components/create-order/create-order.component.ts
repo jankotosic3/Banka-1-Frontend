@@ -200,7 +200,12 @@ export class CreateOrderComponent implements OnInit {
         this.isSubmitting = false;
         this.showConfirmation = false;
         this.toastService.success('Order je uspešno potvrđen.');
-        this.router.navigate(['/securities']);
+        // Send the user to their portfolio so the new position becomes visible
+        // as soon as the order finishes settling. The portfolio page re-fetches
+        // on every navigation hit, so this is the simplest way to show that
+        // a buy actually landed without forcing a manual refresh.
+        const target = this.direction === 'BUY' ? '/portfolio' : '/securities';
+        this.router.navigate([target]);
       },
       error: err => {
         this.isSubmitting = false;

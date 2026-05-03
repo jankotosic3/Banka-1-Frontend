@@ -9,6 +9,15 @@
           Pregled hartija, ukupnog profita i poreskih obaveza.
         </p>
       </div>
+      <button
+        type="button"
+        class="z-btn-secondary"
+        (click)="loadPortfolio()"
+        [disabled]="isLoading"
+      >
+        <span *ngIf="!isLoading">Osveži</span>
+        <span *ngIf="isLoading">Učitavanje...</span>
+      </button>
     </div>
 
     <div *ngIf="isLoading" class="z-card p-12 text-center text-muted-foreground">
